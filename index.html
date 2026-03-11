@@ -310,6 +310,7 @@ body.dark .adaptive-note { color:#bbb; }
     <div id="doseArea"></div>
     <div id="revArea"></div>
   </div>
+  <div id="treatmentArcBanner" style="display:none;"></div>
   <div id="zonesOut"></div>
 </div>
 </div>
@@ -604,7 +605,7 @@ const DRUGS = {
     get zones() { return this.zonesByDose[ST.wellbutrinDose||300] || this.zonesByDose[300]; }
   },
   lamictal: {
-    name:'Lamictal 50mg', short:'Lamictal', cls:'l', color:'#40b070', light:'#eefff4',
+    name:'Lamictal', short:'Lamictal', cls:'l', color:'#40b070', light:'#eefff4',
     rev:[{lbl:'Want peak concentration at:', off:2, desc:'peak concentration', id:'rv-l1'}],
     doses: [
       {mg:25,  label:'25mg',  note:'Starting titration — sub-therapeutic, building tolerance'},
@@ -688,80 +689,92 @@ const DRUGS = {
   }
 
   ,concerta: {
-    name:'Concerta 27mg', short:'Concerta', cls:'c', color:'#e07030', light:'#fff3ee',
+    name:'Concerta', short:'Concerta', cls:'c', color:'#e07030', light:'#fff3ee',
     rev:[{lbl:'Want peak at:', off:7, desc:'Peak Zone', id:'rv-c1'}],
-    zones:[
-      {start:0, end:1, label:"IR Overcoat", power:"2–3 / 10", tl:'#f5d8c0',
-       notes:[
-         "22% of the 27mg dose (≈6mg) is in the outer overcoat — dissolving right now",
-         "This immediate-release layer hits the bloodstream within 30–60 min",
-         "First small plasma peak occurs around 1 hour after dose",
-         "Noticeably gentler onset than Ritalin LA — no sharp initial kick",
-         "OROS doesn't frontload — it's designed to build, not spike",
-         "Appetite suppression may start here before cognitive effects are clear"
-       ], tag:"The primer coat. Just getting started."},
-      {start:1, end:3, label:"Building", power:"4–6 / 10", tl:'#e8b090', third:true,
-       notes:[
-         "IR dose absorbed, osmotic pump now beginning steady release",
-         "Blood levels rising continuously — no plateau, no trough here",
-         "Mild but real improvement in focus and task initiation",
-         "This is where Concerta differs most from Ritalin LA — no valley between peaks",
-         "The ascending curve means you feel better at hour 3 than hour 1",
-         "Some people find mornings slightly slow on Concerta — this is why",
-         "Good for: easing into the day, moderate tasks, not demanding deep work yet"
-       ], tag:"Ascending. The curve keeps climbing."},
-      {start:3, end:6, label:"Ascending Peak", power:"6–8 / 10", tl:'#d87828', third:true,
-       notes:[
-         "OROS osmotic pump delivering methylphenidate continuously and smoothly",
-         "No second surge feeling — just a steady, confident climb",
-         "Focus becoming reliable, working memory noticeably sharper",
-         "Task initiation easier — the prefrontal cortex getting strong signal",
-         "This window often feels smoother than Ritalin LA peaks — less 'edgy'",
-         "Good window for structured work, studying, meetings"
-       ], tag:"Smooth climb. This is Concerta's strength."},
-      {start:6, end:9, label:"True Peak ⭐", power:"8–9 / 10", tl:'#c05a10', peak:true,
-       notes:[
-         "FDA-confirmed mean Tmax of 6.8 ± 1.8 hours — you are at or near peak plasma now",
-         "d-methylphenidate concentration at its highest — dopamine transporter occupancy maximal",
-         "This is Concerta's strongest cognitive window — it arrives late by design",
-         "Deep work, complex problem-solving, and sustained attention most accessible here",
-         "Many people are surprised the best effects come mid-to-late afternoon",
-         "Emotional regulation often noticeably improved in this window",
-         "Heart rate and blood pressure at highest point — expected and normal"
-       ], tag:"This is what you've been building toward all morning."},
-      {start:9, end:11, label:"Plateau", power:"6–7 / 10", tl:'#d88840', second:true,
-       notes:[
-         "Peak passed but methylphenidate still well above therapeutic threshold",
-         "Half-life ~3.5hrs means roughly half the peak concentration still active",
-         "Focus solid and reliable — less sharp than peak, still very usable",
-         "Good for: afternoon tasks, review, writing, structured work",
-         "Better evening coverage than Ritalin LA at equivalent dose",
-         "Smoother decline than most stimulants — Concerta rarely crashes hard"
-       ], tag:"Still strong. Concerta's long tail working for you."},
-      {start:11, end:13, label:"Taper", power:"3–5 / 10", tl:'#e8b880',
-       notes:[
-         "Drug clearing — about 10–12hr total therapeutic window",
-         "Focus requires noticeably more effort now",
-         "Distractibility returning — lighter tasks only",
-         "Some people notice mild rebound irritability or fatigue here",
-         "Better for: review, admin, passive reading, winding down work",
-         "Sleep should be possible if you dosed in the morning — dose timing matters a lot with 12hr meds"
-       ], tag:"Gradual landing."},
-      {start:13, end:Infinity, label:"Baseline", power:"2–3 / 10", tl:'#f5e8dc',
-       notes:[
-         "Methylphenidate essentially cleared from system",
-         "ADHD baseline returning — normal and expected",
-         "Appetite returns, often strongly — eat a proper meal",
-         "Mental fatigue likely after a long active window",
-         "Sleep should be accessible — if not, consider earlier dosing time",
-         "No accumulation day-to-day — each dose starts fresh"
-       ], tag:"Done for the day. Recover well."}
-    ]
+    doses:[
+      {mg:18, label:'18mg', note:'Starting / pediatric dose — often sub-therapeutic for adults. OROS delivers ~4mg IR + 14mg extended'},
+      {mg:27, label:'27mg', note:'Low adult dose — ~6mg IR overcoat. Often a step-up from 18mg or a mild maintenance dose'},
+      {mg:36, label:'36mg', note:'Standard adult dose — ~8mg IR overcoat. Most common adult therapeutic range'},
+      {mg:54, label:'54mg', note:'Maximum approved dose — ~12mg IR overcoat. Strong effect, higher cardiovascular load'},
+    ],
+    zonesByDose:{
+      18:[
+        {start:0, end:1, label:"IR Overcoat", power:"1–2 / 10", tl:'#f5d8c0',
+         notes:["18mg: ~4mg immediate-release overcoat — very gentle onset","OROS osmotic pump beginning to prime","Minimal noticeable effect at this dose for most adults — 18mg is often sub-therapeutic","Children and low-weight individuals may notice more effect","Appetite suppression unlikely to be significant at this dose","Useful as a starting dose to assess tolerability before titrating up"], tag:"Primer dose. May feel subtle at 18mg."},
+        {start:1, end:3, label:"Building", power:"2–4 / 10", tl:'#e8b090', third:true,
+         notes:["IR overcoat absorbed, extended-release pump active","Blood levels rising but peak concentration at 18mg is relatively low","Some focus improvement but likely modest for adults","18mg is often described as 'taking the edge off' rather than full effect","Good dose for assessing side effects before increasing","If this feels adequate, great — many users need 36mg+"], tag:"Ascending — may need more for full effect."},
+        {start:3, end:6, label:"Ascending", power:"3–5 / 10", tl:'#d87828', third:true,
+         notes:["Steady osmotic delivery continuing","Peak concentration at 18mg is approximately 4 ng/mL — lower end of therapeutic range","Focus benefit real but partial for many adults","Heart rate and BP elevation minimal at this dose","Side effects (dry mouth, appetite suppression) milder than higher doses","Some adults find this dose ideal for anxiety-sensitive situations"], tag:"Mild but smooth — low side effect window."},
+        {start:6, end:9, label:"True Peak ⭐", power:"4–6 / 10", tl:'#c05a10', peak:true,
+         notes:["Tmax 6.8hr — peak plasma reached","At 18mg, peak Cmax ~4 ng/mL (vs ~8 ng/mL at 36mg)","Effect real but modest — DAT occupancy partial","Best cognitive window of the day at this dose","Many adults describe needing 36mg for reliable executive function support","Emotional regulation improvement mild"], tag:"Peak — modest but real at 18mg."},
+        {start:9, end:11, label:"Plateau", power:"3–4 / 10", tl:'#d88840', second:true,
+         notes:["Post-peak plateau — still above baseline","Effect fading faster than at higher doses due to lower plasma","Tasks requiring sustained effort becoming difficult","Consider whether 18mg is sufficient for your needs","No hard crash expected — low dose means smooth descent","Appetite returning"], tag:"Fading. 18mg has a shorter useful window."},
+        {start:11, end:13, label:"Taper", power:"1–3 / 10", tl:'#e8b880',
+         notes:["Drug clearing rapidly at 3.5hr half-life","Minimal effect remaining","ADHD baseline likely returning fully","Sleep accessible — low dose clears quickly","Good time to assess how baseline feels vs medicated","No appetite suppression remaining"], tag:"Clearing quickly at this dose."},
+        {start:13, end:Infinity, label:"Baseline", power:"—", tl:'#f5e8dc',
+         notes:["Cleared. No accumulation between doses","18mg is often used as a trial starting dose — discuss with prescriber if effects feel insufficient","Sleep should be unaffected","Appetite fully back","No day-to-day tolerance buildup"], tag:"Fully cleared. Evaluate efficacy."}
+      ],
+      27:[
+        {start:0, end:1, label:"IR Overcoat", power:"2–3 / 10", tl:'#f5d8c0',
+         notes:["22% of the 27mg dose (≈6mg) is in the outer overcoat — dissolving right now","This immediate-release layer hits the bloodstream within 30–60 min","First small plasma peak occurs around 1 hour after dose","Noticeably gentler onset than Ritalin LA — no sharp initial kick","OROS doesn't frontload — it's designed to build, not spike","Appetite suppression may start here before cognitive effects are clear"], tag:"The primer coat. Just getting started."},
+        {start:1, end:3, label:"Building", power:"4–6 / 10", tl:'#e8b090', third:true,
+         notes:["IR dose absorbed, osmotic pump now beginning steady release","Blood levels rising continuously — no plateau, no trough here","Mild but real improvement in focus and task initiation","This is where Concerta differs most from Ritalin LA — no valley between peaks","The ascending curve means you feel better at hour 3 than hour 1","Some people find mornings slightly slow on Concerta — this is why"], tag:"Ascending. The curve keeps climbing."},
+        {start:3, end:6, label:"Ascending Peak", power:"6–8 / 10", tl:'#d87828', third:true,
+         notes:["OROS osmotic pump delivering methylphenidate continuously and smoothly","No second surge feeling — just a steady, confident climb","Focus becoming reliable, working memory noticeably sharper","Task initiation easier — the prefrontal cortex getting strong signal","This window often feels smoother than Ritalin LA peaks — less 'edgy'","Good window for structured work, studying, meetings"], tag:"Smooth climb. This is Concerta's strength."},
+        {start:6, end:9, label:"True Peak ⭐", power:"8–9 / 10", tl:'#c05a10', peak:true,
+         notes:["FDA-confirmed mean Tmax of 6.8 ± 1.8 hours — you are at or near peak plasma now","d-methylphenidate concentration at its highest — dopamine transporter occupancy maximal","This is Concerta's strongest cognitive window — it arrives late by design","Deep work, complex problem-solving, and sustained attention most accessible here","Many people are surprised the best effects come mid-to-late afternoon","Emotional regulation often noticeably improved in this window","Heart rate and blood pressure at highest point — expected and normal"], tag:"This is what you've been building toward all morning."},
+        {start:9, end:11, label:"Plateau", power:"6–7 / 10", tl:'#d88840', second:true,
+         notes:["Peak passed but methylphenidate still well above therapeutic threshold","Half-life ~3.5hrs means roughly half the peak concentration still active","Focus solid and reliable — less sharp than peak, still very usable","Good for: afternoon tasks, review, writing, structured work","Better evening coverage than Ritalin LA at equivalent dose","Smoother decline than most stimulants — Concerta rarely crashes hard"], tag:"Still strong. Concerta's long tail working for you."},
+        {start:11, end:13, label:"Taper", power:"3–5 / 10", tl:'#e8b880',
+         notes:["Drug clearing — about 10–12hr total therapeutic window","Focus requires noticeably more effort now","Distractibility returning — lighter tasks only","Some people notice mild rebound irritability or fatigue here","Better for: review, admin, passive reading, winding down work","Sleep should be possible if you dosed in the morning — dose timing matters a lot with 12hr meds"], tag:"Gradual landing."},
+        {start:13, end:Infinity, label:"Baseline", power:"2–3 / 10", tl:'#f5e8dc',
+         notes:["Methylphenidate essentially cleared from system","ADHD baseline returning — normal and expected","Appetite returns, often strongly — eat a proper meal","Mental fatigue likely after a long active window","Sleep should be accessible — if not, consider earlier dosing time","No accumulation day-to-day — each dose starts fresh"], tag:"Done for the day. Recover well."}
+      ],
+      36:[
+        {start:0, end:1, label:"IR Overcoat", power:"3–4 / 10", tl:'#f5d8c0',
+         notes:["22% of 36mg = ~8mg immediate-release overcoat — noticeably stronger onset than 27mg","Plasma rise faster and higher than lower doses","Appetite suppression beginning within the hour","Some people find 36mg onset slightly more abrupt than 27mg — still smooth vs Ritalin","OROS pump priming for sustained delivery","Standard adult starting point — 36mg is the most common adult dose"], tag:"Stronger primer. Standard adult dose territory."},
+        {start:1, end:3, label:"Building", power:"5–7 / 10", tl:'#e8b090', third:true,
+         notes:["Extended-release pump delivering ~0.9mg/hr equivalent","Blood levels climbing reliably — smoother than any IR formulation","Meaningful focus improvement evident by hour 2 for most adults","36mg puts plasma in the reliable therapeutic range from early on","Less 'waiting for it to kick in' than lower doses","Appetite suppression real — eat before dosing if needed"], tag:"Climbing steadily into therapeutic range."},
+        {start:3, end:6, label:"Ascending Peak", power:"7–9 / 10", tl:'#d87828', third:true,
+         notes:["36mg delivering strong, smooth cognitive effect","DAT and NET occupancy in full therapeutic range","Executive function, working memory, task initiation all strongly supported","This window is why many adults prefer Concerta over IR methylphenidate — no jagged peaks","Emotional regulation benefits maximal here alongside cognitive effect","Good window for complex work, meetings, creative tasks"], tag:"Full therapeutic effect building."},
+        {start:6, end:9, label:"True Peak ⭐", power:"9–10 / 10", tl:'#c05a10', peak:true,
+         notes:["Tmax 6.8hr — peak Cmax at 36mg approximately 8 ng/mL (FDA label data)","Maximum DAT occupancy — strongest cognitive window of the day","Deep focus, sustained attention, and executive control at their best","Most demanding cognitive work should be scheduled here if possible","Heart rate and blood pressure at daily maximum — expected at therapeutic doses","Some people find 36mg slightly activating/anxiogenic near peak — if so, 27mg may be better fit"], tag:"Peak cognitive performance. This is the design goal."},
+        {start:9, end:11, label:"Plateau", power:"7–8 / 10", tl:'#d88840', second:true,
+         notes:["Post-peak but still strong — 36mg has better plateau coverage than 27mg","Concentration above 50% of Cmax for most of this window","Focus reliable for structured afternoon tasks","Better late-day coverage than lower doses — 36mg is designed for full school/work day","Cardiovascular load beginning to ease","Appetite returning slowly — lighter than at 27mg"], tag:"Strong plateau. 36mg earns its keep all afternoon."},
+        {start:11, end:13, label:"Taper", power:"4–6 / 10", tl:'#e8b880',
+         notes:["Gradual decline — 36mg rarely causes hard crash","Mild rebound fatigue or irritability possible but usually subtle","Winding down from a full cognitive day","Sleep usually accessible if dosed by 8am — if not, consider 7am dosing","Good window for low-demand tasks, review, winding down","Appetite returning — time for a real meal"], tag:"Gradual landing. Concerta's smooth exit."},
+        {start:13, end:Infinity, label:"Baseline", power:"2–3 / 10", tl:'#f5e8dc',
+         notes:["36mg cleared — no accumulation day-to-day","Mental fatigue after a productive day is normal and expected","Appetite often strong — eat well","Sleep quality depends on dose timing — morning doses clear cleanly","36mg is typically well tolerated long-term at this dose","If effects feel insufficient, discuss 54mg with prescriber — but many adults stay at 36mg long-term"], tag:"Cleared. Refuel and rest."}
+      ],
+      54:[
+        {start:0, end:1, label:"IR Overcoat", power:"4–5 / 10", tl:'#f5d8c0',
+         notes:["22% of 54mg = ~12mg immediate-release overcoat — strongest onset of any Concerta dose","Noticeable effects within 45–60 minutes","Appetite suppression strong from early on — do not skip breakfast","Heart rate elevation begins within the first hour","OROS pump will deliver approximately 1.4mg/hr equivalent throughout the day","54mg is the FDA maximum dose — reserved for patients needing full therapeutic coverage"], tag:"Strong onset. Maximum dose territory."},
+        {start:1, end:3, label:"Building", power:"6–8 / 10", tl:'#e8b090', third:true,
+         notes:["Extended-release delivering highest sustained plasma of any Concerta dose","Strong focus and executive function improvement already active","Appetite suppression significant — plan meals carefully, especially breakfast","54mg recommended for adults who found 36mg insufficient after adequate trial","Blood pressure monitoring recommended at this dose","Side effects (dry mouth, headache, anxiety) more common than at lower doses"], tag:"High-load building phase. Monitor BP."},
+        {start:3, end:6, label:"Ascending Peak", power:"8–10 / 10", tl:'#d87828', third:true,
+         notes:["54mg delivering maximum sustained methylphenidate effect","Executive function, sustained attention, and working memory at highest capacity","Some patients find this dose slightly over-activating — anxiety or edge possible","If anxiety is noticeable here, 36mg may be the better therapeutic dose","Emotional regulation strong — impulsivity markedly reduced","Best window for high-demand cognitive work at this dose"], tag:"Maximum sustained delivery. High cognitive load window."},
+        {start:6, end:9, label:"True Peak ⭐", power:"9–10 / 10", tl:'#c05a10', peak:true,
+         notes:["Tmax 6.8hr — peak Cmax at 54mg approximately 12–13 ng/mL","Maximum FDA-approved dose at peak plasma — highest DAT/NET occupancy possible with Concerta","Deep focus, full executive control, sustained attention at maximum","Cardiovascular load at its highest — heart rate and BP most elevated here","Patients with hypertension or cardiac concerns should discuss 54mg carefully with prescriber","This is a high-powered dose — appropriate for adults with significant impairment uncontrolled at lower doses"], tag:"Peak. Maximum dose at maximum effect."},
+        {start:9, end:11, label:"Plateau", power:"8–9 / 10", tl:'#d88840', second:true,
+         notes:["54mg has strong late-day coverage — this is its clinical advantage","Plasma still high — cognitive effect reliable well into afternoon","Better coverage for long work days or evening demands than lower doses","Cardiovascular load still elevated — exercise caution with intense physical activity","Appetite suppression likely persisting — eat dinner consciously","Sleep monitoring important — 54mg may affect sleep if not dosed early enough"], tag:"Strong into the afternoon. Best late-day coverage."},
+        {start:11, end:13, label:"Taper", power:"5–7 / 10", tl:'#e8b880',
+         notes:["Gradual decline from 54mg — still above therapeutic threshold for some tasks","Sleep timing concern: if you are still feeling effects, dosing was too late","Rebound effects (irritability, crash) more possible at maximum dose than lower doses","Wind down demanding work","Appetite returning — eat a proper evening meal","If sleep is consistently disrupted, dose timing adjustment likely needed (try 6–7am)"], tag:"High-dose taper. Sleep timing matters most here."},
+        {start:13, end:Infinity, label:"Baseline", power:"2–4 / 10", tl:'#f5e8dc',
+         notes:["54mg cleared — mentally demanding day likely","Mental fatigue expected after maximum cognitive activation","Appetite strong — replenish properly","Sleep quality very sensitive to dose timing at 54mg — strict morning dosing essential","54mg is appropriate for those who need it — do not feel the dose needs justification","Annual check-in on whether 54mg remains necessary or if lower dose would suffice"], tag:"Cleared. Recover intentionally at this dose."}
+      ]
+    },
+    get zones() { return this.zonesByDose[ST.concertaDose||27] || this.zonesByDose[27]; }
   }
   ,remeron: {
-    name:'Remeron 7.5mg', short:'Remeron', cls:'rm', color:'#2080c0', light:'#eef5ff',
+    name:'Remeron', short:'Remeron', cls:'rm', color:'#2080c0', light:'#eef5ff',
     rev:[{lbl:'Want asleep by:', off:0.75, desc:'Peak Sedation', id:'rv-rm1'}],
-    zones:[
+    doses:[
+      {mg:7.5,  label:'7.5mg',  note:'Most sedating dose — pure H1 blockade dominates. Best for insomnia. Paradoxically weaker antidepressant than higher doses'},
+      {mg:15,   label:'15mg',   note:'H1 blockade + noradrenergic activation beginning. Moderate sedation. Transition dose — both sedating and antidepressant'},
+      {mg:30,   label:'30mg',   note:'Full NaSSA effect — noradrenergic activation now partially offsets H1. Less sedating than 7.5mg but strongest antidepressant effect'},
+    ],
+    zonesByDose:{
+      7.5:[
       {start:0, end:0.75, label:"Onset", power:"2–4 / 10", tl:'#b8d8f0',
        notes:[
          "Mirtazapine absorbing rapidly — bioavailability ~50% due to first-pass metabolism",
@@ -817,10 +830,40 @@ const DRUGS = {
          "Take next dose 30–60 min before target sleep time for best effect",
          "Consistent same-time dosing important — irregular timing disrupts steady-state levels"
        ], tag:"Trough. Take next dose before bed."}
-    ]
+      ],
+      15:[
+        {start:0, end:0.75, label:"Onset", power:"3–5 / 10", tl:'#b8d8f0',
+         notes:["15mg: H1 blockade active but noradrenergic (α2) stimulation now beginning to compete","Sedation onset within 30–45 min — noticeable but less overwhelming than 7.5mg","The paradox begins here: higher dose, moderately less sedating","α2 autoreceptor blockade increasing NE/5-HT release — starts to offset histamine sedation","Still clearly sedating — get into bed within 30–45 min","Better antidepressant foundation than 7.5mg while maintaining sleep benefit"], tag:"Sedating but less than 7.5mg. Better antidepressant base."},
+        {start:0.75, end:2, label:"Peak Sedation ⭐", power:"7–9 / 10", tl:'#1060a0', peak:true,
+         notes:["Plasma near Tmax — deep sedation window","15mg peak sedation is strong but less absolute than 7.5mg","H1 blockade fully active — sleep onset accelerated","α2 blockade also fully active — NE and 5-HT releasing simultaneously","5-HT2A/2C blockade directing serotonin toward 5-HT1A — antidepressant mechanism active","Most people report 15mg as a good sleep/antidepressant balance dose"], tag:"Deep sedation. Better antidepressant than 7.5mg."},
+        {start:2, end:5, label:"Deep Sleep Window", power:"7–8 / 10", tl:'#1878b8', second:true,
+         notes:["High plasma, slow-wave sleep enhanced","15mg provides strong sleep architecture improvement — more restorative than 7.5mg for some","NE and 5-HT elevated by α2 blockade — building antidepressant effect faster than 7.5mg","Appetite stimulation significant at 15mg — weight gain common concern","5-HT3 blockade reducing nausea (also useful for chemotherapy-related nausea — 15mg common medical use)","Do not interrupt this sleep window"], tag:"Deep restorative sleep. Strong antidepressant mechanism."},
+        {start:5, end:8, label:"Residual Sedation", power:"4–6 / 10", tl:'#4090c8', third:true,
+         notes:["Morning grogginess at 15mg typically less severe than 7.5mg (noradrenergic activation partially counteracting histamine hangover)","Half-life 20–40hr — substantial drug still present","Cognitive function returning faster than at 7.5mg for many patients","Appetite strongly elevated — plan breakfast","Mood often noticeably improved in the morning — NaSSA antidepressant effect active","Do not drive until fully alert"], tag:"Groggy but less than 7.5mg. Mood benefit often noticeable."},
+        {start:8, end:12, label:"Clearing", power:"3–5 / 10", tl:'#70b0d8',
+         notes:["Sedation clearing — most patients feel reasonably alert by hour 8–10","Tolerance to morning sedation develops within 1–2 weeks at 15mg","Appetite remains elevated — 15mg has significant appetite/weight effects","Anxiolytic benefit active throughout the day (5-HT2C and 5-HT3 blockade)","15mg is a common long-term maintenance dose for depression with insomnia","If morning sedation persists beyond 2 weeks, discuss dose or timing with prescriber"], tag:"Alert by mid-morning. Good antidepressant coverage."},
+        {start:12, end:Infinity, label:"Baseline / Pre-dose", power:"2–3 / 10", tl:'#c0ddf0',
+         notes:["~50% plasma still present — never fully clears at once-daily dosing","Steady state at 15mg: 4–5 days","Antidepressant effect cumulative — full effect at 4–6 weeks","Appetite stimulation significant even at trough — plan meals","15mg is the most commonly prescribed mirtazapine dose globally","Take dose 30–60 min before target sleep time"], tag:"Pre-dose trough. Consistent timing essential."}
+      ],
+      30:[
+        {start:0, end:0.75, label:"Onset", power:"2–4 / 10", tl:'#b8d8f0',
+         notes:["30mg: noradrenergic α2 blockade now substantially offsetting H1 sedation — the paradox fully expressed","Sedation onset milder than 7.5mg or 15mg — this dose is paradoxically the least sedating","Higher NE/5-HT release from α2 blockade actively competing with histamine sleepiness","Still sedating enough for sleep — but less 'knocked out' feeling","Get into bed within 45–60 min — effect is real but gentler","Some patients switched to 30mg specifically because 15mg was too sedating next morning"], tag:"The paradox: more drug, less sedation."},
+        {start:0.75, end:2, label:"Peak Sedation ⭐", power:"5–8 / 10", tl:'#1060a0', peak:true,
+         notes:["30mg at Tmax — sedation real but meaningfully less than lower doses","Full H1 blockade offset by substantial noradrenergic activation","Sleep onset still accelerated — the balance between sedation and activation favors sleep without KO","5-HT2A/2C blockade fully active — strongest serotonergic antidepressant effect of the three doses","α2 blockade maximally elevating NE and 5-HT — this is why 30mg is the gold standard antidepressant dose","REM suppression and slow-wave enhancement still present despite reduced sedation"], tag:"Strongest antidepressant dose. Sleep benefit maintained."},
+        {start:2, end:5, label:"Deep Sleep Window", power:"6–8 / 10", tl:'#1878b8', second:true,
+         notes:["30mg at high plasma — slow-wave sleep enhanced","Maximum NE and 5-HT elevation of any mirtazapine dose — antidepressant mechanism most active","Weight gain risk highest at 30mg — 5-HT2C and H1 appetite effects strong","Sleep architecture improvement still significant despite less total sedation","Many patients report better sleep quality (not just duration) at 30mg vs 15mg","30mg is the preferred dose for melancholic or severe depression"], tag:"Best antidepressant effect. Weight gain watch."},
+        {start:5, end:8, label:"Residual Sedation", power:"3–5 / 10", tl:'#4090c8', third:true,
+         notes:["Morning hangover typically least severe of the three doses — noradrenergic activation clearing histamine effects","Half-life 20–40hr — still substantial drug present","Many patients switched to 30mg from 15mg specifically for better morning functioning","Cognitive alertness often better than at lower doses by hour 6–8","Appetite strongly elevated — 30mg has most significant appetite/weight effects","Mood lift often most noticeable in the morning at this dose"], tag:"Best morning functioning of the three doses."},
+        {start:8, end:12, label:"Clearing", power:"3–4 / 10", tl:'#70b0d8',
+         notes:["30mg patients often describe the best daytime function of any mirtazapine dose","Anxiolytic and antidepressant effects most pronounced throughout the day","Tolerance to any residual sedation develops faster at 30mg than lower doses","Appetite and weight management most challenging at 30mg — ongoing monitoring recommended","30mg is used for: major depression, treatment-resistant depression, severe anxiety, PTSD","If appetite/weight gain is significant concern, 15mg may be a better long-term fit"], tag:"Best daytime antidepressant coverage."},
+        {start:12, end:Infinity, label:"Baseline / Pre-dose", power:"2–3 / 10", tl:'#c0ddf0',
+         notes:["~50% plasma still present — continuous antidepressant coverage","30mg steady state: 4–5 days, full antidepressant effect: 4–6 weeks","Most effective mirtazapine dose for depression — research consistently shows 30mg outperforms 15mg for mood","Appetite stimulation ongoing — weight gain is the most common reason patients switch down","Take dose 30–60 min before target sleep time","Never stop 30mg abruptly — taper as directed with prescriber guidance"], tag:"Strongest antidepressant floor. Same-time dosing always."}
+      ]
+    },
+    get zones() { return this.zonesByDose[ST.remeronDose||7.5] || this.zonesByDose[7.5]; }
   }
   ,lexapro: {
-    name:'Lexapro 10mg', short:'Lexapro', cls:'lx', color:'#d06820', light:'#fff4ec',
+    name:'Lexapro', short:'Lexapro', cls:'lx', color:'#d06820', light:'#fff4ec',
     rev:[{lbl:'Target steady state at:', off:5, desc:'Plasma peak', id:'rv-lx1'}],
     doses:[
       {mg:5,  label:'5mg',  note:'Starting dose or long-term maintenance for sensitive individuals — ~65-70% SERT occupancy'},
@@ -991,7 +1034,7 @@ let tickTimer = null;
 
 function loadState() {
   try { const s = localStorage.getItem('gz2'); if(s) return JSON.parse(s); } catch(e){}
-  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false};
+  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false, treatmentDates:{}, treatmentStart:{}};
 }
 function save() { try { localStorage.setItem('gz2', JSON.stringify(ST)); } catch(e){} }
 
@@ -1017,6 +1060,15 @@ async function init() {
       launchApp();
     }
   });
+}
+
+function initDrugNames() {
+  // Set dose-annotated names based on saved dose state
+  if (ST.lamictalDose)   DRUGS.lamictal.name   = 'Lamictal · '     + ST.lamictalDose   + 'mg';
+  if (ST.wellbutrinDose) DRUGS.wellbutrin.name  = 'Wellbutrin XL · '+ ST.wellbutrinDose + 'mg';
+  if (ST.lexaproDose)    DRUGS.lexapro.name     = 'Lexapro · '      + ST.lexaproDose    + 'mg';
+  if (ST.concertaDose)   DRUGS.concerta.name    = 'Concerta · '     + ST.concertaDose   + 'mg';
+  if (ST.remeronDose)    DRUGS.remeron.name     = 'Remeron · '      + ST.remeronDose    + 'mg';
 }
 
 function launchApp() {
@@ -1220,7 +1272,7 @@ function renderInput() {
 
   // Dose selector for drugs that have multi-dose options
   let doseHtml = '';
-  const doseKey = activeDrug === 'lamictal' ? 'lamictalDose' : activeDrug === 'wellbutrin' ? 'wellbutrinDose' : activeDrug === 'lexapro' ? 'lexaproDose' : null;
+  const doseKey = activeDrug === 'lamictal' ? 'lamictalDose' : activeDrug === 'wellbutrin' ? 'wellbutrinDose' : activeDrug === 'lexapro' ? 'lexaproDose' : activeDrug === 'concerta' ? 'concertaDose' : activeDrug === 'remeron' ? 'remeronDose' : null;
   if (doseKey && d.doses) {
     const curDose = ST[doseKey] || d.doses[1]?.mg || d.doses[0]?.mg;
     const curDoseObj = d.doses.find(x => x.mg === curDose) || d.doses[0];
@@ -1298,9 +1350,11 @@ function onDose(v) {
 function setDose(key, mg) {
   ST[key] = mg;
   // update drug name display to reflect selected dose
-  if (key === 'lamictalDose') DRUGS.lamictal.name = 'Lamictal ' + mg + 'mg';
-  if (key === 'wellbutrinDose') DRUGS.wellbutrin.name = 'Wellbutrin XL ' + mg + 'mg';
-  if (key === 'lexaproDose') DRUGS.lexapro.name = 'Lexapro ' + mg + 'mg';
+  if (key === 'lamictalDose') DRUGS.lamictal.name = 'Lamictal · ' + mg + 'mg';
+  if (key === 'wellbutrinDose') DRUGS.wellbutrin.name = 'Wellbutrin XL · ' + mg + 'mg';
+  if (key === 'lexaproDose')   DRUGS.lexapro.name  = 'Lexapro · '      + mg + 'mg';
+  if (key === 'concertaDose')  DRUGS.concerta.name = 'Concerta · '     + mg + 'mg';
+  if (key === 'remeronDose')   DRUGS.remeron.name  = 'Remeron · '      + mg + 'mg';
   save();
   buildTabs();     // re-render tab labels
   renderInput();   // re-render dose buttons
@@ -1596,7 +1650,7 @@ const COMBO_LM_LX = {
       net: {
         label: 'Building foundation',
         color: '#a07030',
-        description: "Both drugs are still establishing their therapeutic effect. Lamictal's Na+ channel blockade is active but the mood-stabilizing receptor adaptations take 3–6 weeks. Lexapro's SERT blockade is immediate but the antidepressant effect requires 5-HT1A autoreceptor desensitization, which builds over weeks. This is the patience phase — effects are accumulating below the surface.",
+        description: "Both drugs are still establishing their therapeutic effect. Lamictal Na+ channel blockade is active but the mood-stabilizing receptor adaptations take 3–6 weeks. Lexapro's SERT blockade is immediate but the antidepressant effect requires 5-HT1A autoreceptor desensitization, which builds over weeks. This is the patience phase — effects are accumulating below the surface.",
         feels: [
           'Subtle changes possible but no full effect yet',
           'Lamictal may cause minor dizziness or word-finding difficulty early on — usually clears',
@@ -1974,6 +2028,365 @@ function renderTicks(dose,totalH,absolute) {
 }
 
 // ─── ZONES ────────────────────────────────────────────────────────────────────
+// ─── TREATMENT ARC ENGINE ─────────────────────────────────────────────────────
+// Tracks how many days a slow-onset drug has been taken, accounting for gaps.
+// Only meaningful for Lexapro and Lamictal — these are the slow-build drugs.
+
+const SLOW_BUILD_DRUGS = ['lexapro', 'lamictal'];
+const LAMICTAL_RESTART_THRESHOLD_DAYS = 5; // >5 half-lives = must retitrate (SJS risk)
+const LEXAPRO_HALF_LIFE_H = 30; // mean 27-32hr
+
+// Mark a day as taken or missed for a slow-build drug
+function markTreatmentDay(drugKey, dateKey, status) {
+  // status: 'taken' | 'missed' | null (clear)
+  if (!ST.treatmentDates) ST.treatmentDates = {};
+  if (!ST.treatmentDates[drugKey]) ST.treatmentDates[drugKey] = {};
+  if (status === null) {
+    delete ST.treatmentDates[drugKey][dateKey];
+  } else {
+    ST.treatmentDates[drugKey][dateKey] = status;
+  }
+  // Update treatmentStart if this is earlier
+  if (status === 'taken') {
+    const cur = ST.treatmentStart?.[drugKey];
+    if (!cur || dateKey < cur) {
+      if (!ST.treatmentStart) ST.treatmentStart = {};
+      ST.treatmentStart[drugKey] = dateKey;
+    }
+  }
+  save();
+  renderCalendarStrip();
+  renderTreatmentArcBanner();
+}
+
+// Get all marked dates for a drug (merges log dates + explicit marks)
+function getTreatmentDateMap(drugKey) {
+  const map = {}; // dateKey -> 'taken'|'missed'
+  // Explicit marks override everything
+  const explicit = (ST.treatmentDates?.[drugKey]) || {};
+  // Infer from logs — any log for this drug = taken that day
+  const logs = (ST.logs||[]).filter(e => e.drug === drugKey);
+  logs.forEach(e => {
+    if (e.ts) {
+      const dk = appDay(e.ts);
+      if (!explicit[dk]) map[dk] = 'taken'; // logs imply taken
+    }
+  });
+  // Explicit marks take priority
+  Object.assign(map, explicit);
+  return map;
+}
+
+// Get treatment start date (earliest taken day)
+function getTreatmentStartDate(drugKey) {
+  if (ST.treatmentStart?.[drugKey]) return ST.treatmentStart[drugKey];
+  // Fall back to oldest log
+  const logs = (ST.logs||[]).filter(e => e.drug === drugKey);
+  if (!logs.length) return null;
+  const oldest = logs.reduce((a, b) => a.ts < b.ts ? a : b);
+  return appDay(oldest.ts);
+}
+
+// Returns {totalDays, takenDays, missedDays, lastMissedStreak, needsRetitrate}
+function getTreatmentStats(drugKey) {
+  const startDate = getTreatmentStartDate(drugKey);
+  if (!startDate) return null;
+  const todayStr = todayKey();
+  const map = getTreatmentDateMap(drugKey);
+
+  let takenDays = 0, missedDays = 0, lastMissedStreak = 0, currentMissedStreak = 0;
+  let totalDays = 0;
+
+  const start = new Date(startDate + 'T12:00:00');
+  const today = new Date(todayStr + 'T12:00:00');
+  const msPerDay = 86400000;
+
+  // Walk from start to today
+  let d = new Date(start);
+  let recentMissedStreak = 0;
+  while (d <= today) {
+    const dk = appDay(d);
+    totalDays++;
+    const status = map[dk];
+    if (status === 'missed') {
+      missedDays++;
+      recentMissedStreak++;
+      lastMissedStreak = Math.max(lastMissedStreak, recentMissedStreak);
+    } else if (status === 'taken' || (!status && dk <= todayStr)) {
+      // Unknown past days assumed taken (generous — user didn't mark them missed)
+      takenDays++;
+      recentMissedStreak = 0;
+    }
+    d = new Date(d.getTime() + msPerDay);
+  }
+
+  // Check consecutive recent misses (for lamictal restart warning)
+  // Look back from today for consecutive explicitly-missed days
+  let consecutiveMissed = 0;
+  let checkD = new Date(today);
+  for (let i = 0; i < 10; i++) {
+    const dk = appDay(checkD);
+    if (map[dk] === 'missed') {
+      consecutiveMissed++;
+    } else {
+      break;
+    }
+    checkD = new Date(checkD.getTime() - msPerDay);
+  }
+
+  const needsRetitrate = drugKey === 'lamictal' && consecutiveMissed >= LAMICTAL_RESTART_THRESHOLD_DAYS;
+
+  return { totalDays, takenDays, missedDays, lastMissedStreak, consecutiveMissed, needsRetitrate, startDate };
+}
+
+// Returns which pharmacological "arc stage" we are in for a slow-build drug
+function getTreatmentArcStage(drugKey) {
+  const stats = getTreatmentStats(drugKey);
+  if (!stats) return null;
+  const { takenDays, consecutiveMissed, needsRetitrate } = stats;
+
+  if (drugKey === 'lexapro') {
+    // Plasma steady state ~7-10 days, autoreceptor desensitization ~2-4 weeks,
+    // full antidepressant effect ~4-8 weeks. Missed days partially decay.
+    // One missed dose: 27-32hr half-life means ~50% plasma remains at 24hr — no reset
+    // 2-3 missed: autoreceptor adaptation partially preserved (receptor changes are slow)
+    if (consecutiveMissed >= 5) return { stage: 'gap_significant', consecutiveMissed };
+    if (consecutiveMissed >= 2) return { stage: 'gap_minor', consecutiveMissed };
+    if (takenDays <= 3)  return { stage: 'day1_3',    takenDays };
+    if (takenDays <= 10) return { stage: 'week1_2',   takenDays };
+    if (takenDays <= 21) return { stage: 'week2_4',   takenDays };
+    if (takenDays <= 42) return { stage: 'week4_8',   takenDays };
+    return { stage: 'established', takenDays };
+  }
+
+  if (drugKey === 'lamictal') {
+    // Titration phase: dose increases every 2 weeks, mood effect lags even further
+    // Na+ channel blockade immediate; mood stabilization takes weeks-months
+    // CRITICAL: >5 missed days = must retitrate (SJS rash risk)
+    if (needsRetitrate) return { stage: 'retitrate_needed', consecutiveMissed };
+    if (consecutiveMissed >= 2) return { stage: 'gap_warning', consecutiveMissed };
+    if (takenDays <= 14) return { stage: 'titrating',    takenDays };
+    if (takenDays <= 42) return { stage: 'establishing', takenDays };
+    if (takenDays <= 90) return { stage: 'building',     takenDays };
+    return { stage: 'established', takenDays };
+  }
+
+  return null;
+}
+
+// Returns HTML for the treatment arc banner shown above zones
+function treatmentArcBannerHTML(drugKey) {
+  if (!SLOW_BUILD_DRUGS.includes(drugKey)) return '';
+  const stage = getTreatmentArcStage(drugKey);
+  if (!stage) {
+    // Not started — prompt to set start date
+    return `<div style="background:#fffbea;border:1px solid #f0d060;border-radius:8px;padding:11px 14px;margin-bottom:10px;">
+      <div style="font-size:0.78em;font-weight:bold;color:#a07800;margin-bottom:4px;">⏱ Treatment arc — day 1 of many</div>
+      <div style="font-size:0.8em;color:#666;line-height:1.5;">${drugKey==='lexapro'?'Lexapro':'Lamictal'} builds its effect over weeks. Log your first dose or mark days on the calendar to track your treatment arc.</div>
+    </div>`;
+  }
+
+  const d = DRUGS[drugKey];
+  const c = d.color, light = d.light;
+
+  if (drugKey === 'lexapro') {
+    const stages = {
+      day1_3: {
+        icon: '🌱', label: `Day ${stage.takenDays} — Plasma building`,
+        color: '#a07800', bg: '#fffbea',
+        summary: 'SERT is being blocked right now. But serotonin concentrations may actually slightly decrease this week — 5-HT1A autoreceptors are firing back, suppressing serotonergic neurons in response to the new SERT blockade. This is normal and expected. No antidepressant effect yet.',
+        bullets: [
+          'Plasma accumulating — steady state not yet reached (takes 7–10 days)',
+          'SERT blockade: active. Antidepressant effect: not yet',
+          'Side effects (nausea, jitteriness) most likely this week',
+          'The autoreceptor "brake" is engaged — serotonin increase is being damped',
+          'Do not judge efficacy. This is the setup phase.'
+        ]
+      },
+      week1_2: {
+        icon: '📈', label: `Day ${stage.takenDays} — Steady state forming`,
+        color: '#7a5a00', bg: '#fff8e0',
+        summary: 'Plasma has reached or is reaching steady state (2.2–2.5× single dose). SERT blockade is consistent and sustained day-round. Autoreceptors are being exposed to continuous 5-HT presence and beginning to respond. This is the pharmacological foundation.',
+        bullets: [
+          'Plasma steady state: ~reached. Coverage consistent across the full 24hr cycle',
+          "5-HT1A autoreceptors beginning to feel pressure from sustained SERT blockade",
+          'No antidepressant effect yet — autoreceptors still firing suppression signals',
+          'Side effects often begin improving this week as initial GI/CNS adjustment settles',
+          'Early anxiety improvement possible before mood — 5-HT2C effects can be felt faster'
+        ]
+      },
+      week2_4: {
+        icon: '⚙️', label: `Day ${stage.takenDays} — Autoreceptors desensitizing`,
+        color: '#4a7a30', bg: '#f0fff0',
+        summary: 'This is where the mechanism shifts. Sustained 5-HT elevation is forcing 5-HT1A autoreceptors to internalize and desensitize. The suppression brake is lifting. Serotonin firing in raphe projection areas is recovering. Actual synaptic 5-HT is beginning to rise — not just blocked reuptake, but net increase.',
+        bullets: [
+          '5-HT1A autoreceptors undergoing desensitization — the key delayed mechanism',
+          'Serotonin in prefrontal cortex and limbic areas starting to increase',
+          'First signs of antidepressant/anxiolytic effect common here — especially anxiety relief',
+          'Mood lift often lags anxiety relief by 1–2 more weeks',
+          'Escitalopram allosteric SERT binding (unique to this molecule) accelerates desensitization vs other SSRIs'
+        ]
+      },
+      week4_8: {
+        icon: '✨', label: `Day ${stage.takenDays} — Therapeutic window opening`,
+        color: '#1a6a30', bg: '#eafff2',
+        summary: 'Full autoreceptor desensitization is established or nearly so. Downstream receptor changes — 5-HT2A downregulation, 5-HT1A sensitization in limbic targets — are consolidating. This is the clinical therapeutic window. Most patients experience meaningful mood improvement between weeks 4–8.',
+        bullets: [
+          'Autoreceptor desensitization complete — sustained serotonergic signal fully established',
+          '5-HT2A receptors downregulating — reduces anxiety-like signaling',
+          'Neuroplasticity effects (BDNF, hippocampal remodeling) accumulating',
+          'Full antidepressant effect now active or nearly active',
+          'Sexual side effects, if present, typically persist — discuss with prescriber if impacting QoL'
+        ]
+      },
+      established: {
+        icon: '✅', label: `Day ${stage.takenDays} — Fully established`,
+        color: '#1a5a28', bg: '#e8fef0',
+        summary: 'Full steady-state antidepressant effect. The drug action is now built into the synaptic architecture — not the daily dose. The daily pill maintains the receptor environment that took weeks to build.',
+        bullets: [
+          'Therapeutic effect fully established and maintained by consistent daily dosing',
+          "The feeling of stability IS the drug working — not the absence of the drug effect",
+          'Missing occasional single doses: minimal acute impact due to 27-32hr half-life',
+          'Regular dosing maintains the autoreceptor desensitization built over weeks',
+          'Do not stop abruptly — the receptor environment will revert over days-weeks'
+        ]
+      },
+      gap_minor: {
+        icon: '⚠️', label: `${stage.consecutiveMissed} missed day${stage.consecutiveMissed>1?'s':''}`,
+        color: '#a05010', bg: '#fff4e8',
+        summary: `${stage.consecutiveMissed} missed dose${stage.consecutiveMissed>1?'s':''} noted. With a 27–32hr half-life, plasma has dropped but not cleared — roughly ${stage.consecutiveMissed===1?'50%':'25%'} of steady-state level remains. The autoreceptor adaptations built over weeks are not erased by a short gap.`,
+        bullets: [
+          `Plasma at ~${stage.consecutiveMissed===1?'50':'25'}% of steady state — SERT still partially occupied`,
+          'Autoreceptor desensitization from weeks of treatment is not reversed by 1–2 missed days',
+          'Resume normal dose as soon as possible — do not double up',
+          'Discontinuation symptoms (dizziness, electric shocks) possible if gap extends',
+          'The therapeutic effect will return quickly once consistent dosing resumes'
+        ]
+      },
+      gap_significant: {
+        icon: '🔴', label: `${stage.consecutiveMissed} missed days — gap significant`,
+        color: '#c02020', bg: '#fff0f0',
+        summary: `${stage.consecutiveMissed} consecutive missed doses. Plasma has dropped below effective levels (~${Math.round(100*Math.pow(0.5,stage.consecutiveMissed*24/30))}% of steady state remaining). The autoreceptor desensitization built over weeks will begin to reverse. This is not a full restart, but recovery will take 1–2 weeks of consistent dosing.`,
+        bullets: [
+          'Plasma significantly reduced — SERT occupancy falling below therapeutic range',
+          'Autoreceptor desensitization beginning to reverse — serotonergic signal dampening',
+          'Resume medication — but expect 1–2 weeks to return to full effect',
+          'Discontinuation symptoms likely if gap continues — dizziness, electric shocks, mood shift',
+          'Do not restart at a higher dose to compensate — resume your normal prescribed dose'
+        ]
+      }
+    };
+    const s = stages[stage.stage];
+    if (!s) return '';
+    return `<div style="background:${s.bg};border:1px solid ${s.color}44;border-left:4px solid ${s.color};border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+      <div style="font-size:0.78em;font-weight:bold;color:${s.color};margin-bottom:5px;">${s.icon} Lexapro treatment arc — ${s.label}</div>
+      <div style="font-size:0.8em;color:#444;line-height:1.55;margin-bottom:8px;">${s.summary}</div>
+      <div style="font-size:0.75em;color:#555;line-height:1.6;">
+        ${s.bullets.map(b=>`<div style="display:flex;gap:6px;margin-bottom:2px;"><span style="color:${s.color};flex-shrink:0;">·</span><span>${b}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  if (drugKey === 'lamictal') {
+    const stages = {
+      titrating: {
+        icon: '⚠️', label: `Day ${stage.takenDays} — Titration phase`,
+        color: '#c07020', bg: '#fffbea',
+        summary: 'Lamictal is in active titration — the slow dose-escalation protocol that exists to minimize Stevens-Johnson syndrome (SJS) rash risk. Standard titration: 25mg × 2 weeks → 50mg × 2 weeks → target dose. Na+ channel blockade is active at current dose but mood-stabilizing effect at therapeutic dose (200mg+) is weeks away.',
+        bullets: [
+          'Titration phase: critical not to exceed dose escalation schedule — rash risk is highest here',
+          'Na+ channel blockade: active at current dose, but mood effect builds only at therapeutic dose (200mg+)',
+          'Rash monitoring: check skin daily, especially mucosa. Any rash → contact prescriber immediately',
+          'Side effects most common during titration: dizziness, headache, diplopia, word-finding — often improve',
+          'Do NOT miss doses during titration — even short gaps require clinical guidance before resuming'
+        ]
+      },
+      establishing: {
+        icon: '🧱', label: `Day ${stage.takenDays} — Establishing mood floor`,
+        color: '#5a7a30', bg: '#f5fff0',
+        summary: 'Past the active titration phase. Lamictal Na+ channel blockade and glutamate suppression are active at a meaningful dose. The mood-stabilizing effect — reducing episode frequency and severity — takes months to fully establish, but the pharmacological foundation is forming.',
+        bullets: [
+          'Na+ channel blockade established — glutamate release in limbic circuits reduced',
+          'Mood floor forming: less reactive to mood triggers than without medication',
+          'Full mood-stabilizing effect builds over months — do not judge efficacy yet',
+          'Rash risk dramatically reduced now that titration is complete',
+          'Consistent daily dosing is the most important factor at this stage'
+        ]
+      },
+      building: {
+        icon: '📐', label: `Day ${stage.takenDays} — Mood stabilization building`,
+        color: '#3a7040', bg: '#eefff5',
+        summary: 'Months of consistent dosing are building the full mood-stabilizing effect. Lamictal efficacy in bipolar disorder is specifically for preventing depressive episodes — not acute mania treatment. The clinical benefit is cumulative and best measured over quarters, not weeks.',
+        bullets: [
+          'Mood stabilization effect actively building — episode frequency should be reducing',
+          'Best evidence: preventing depressive episodes in bipolar disorder (Geddes 2016)',
+          'Cognitive side effects (word-finding, memory) often improve or resolve by this stage',
+          'If on combination (e.g., with Lexapro): mood floor now supporting serotonergic lift',
+          'Half-life 22–37hr: very stable plasma — no meaningful daily peaks/troughs'
+        ]
+      },
+      established: {
+        icon: '✅', label: `Day ${stage.takenDays} — Established`,
+        color: '#2a5a30', bg: '#e5fae8',
+        summary: 'Long-term mood stabilization established. The effect is in the receptor infrastructure and consistent plasma level — not the daily pill itself. The goal is prevention of episodes, not acute symptom management.',
+        bullets: [
+          'Full mood-stabilizing effect established and maintained',
+          '98% bioavailability and 22–37hr half-life: very consistent plasma coverage',
+          'Missing 1–2 days: minimal immediate impact due to long half-life',
+          'Missing 3–5+ days: MUST consult prescriber before resuming — retitration required',
+          'Never stop abruptly — tapering required to avoid withdrawal and seizure risk'
+        ]
+      },
+      gap_warning: {
+        icon: '⚠️', label: `${stage.consecutiveMissed} missed day${stage.consecutiveMissed>1?'s':''}`,
+        color: '#c07020', bg: '#fff8e0',
+        summary: `${stage.consecutiveMissed} consecutive missed doses. Lamictal has a 22-37 hour half-life — plasma has dropped meaningfully but not fully cleared. Resume medication today. If you've missed more than 5 consecutive days, do not restart at your current dose without prescriber guidance.`,
+        bullets: [
+          `${stage.consecutiveMissed} missed dose${stage.consecutiveMissed>1?'s': ''} — plasma at approximately ${Math.round(100*Math.pow(0.5,stage.consecutiveMissed*24/29))}% of steady state`,
+          'Resume today if fewer than 5 consecutive days missed — take your regular dose',
+          'Do not double up to compensate for missed doses',
+          'Mood destabilization risk increases with each additional missed day',
+          'If gap reaches 5+ days, contact your prescriber before resuming'
+        ]
+      },
+      retitrate_needed: {
+        icon: '🔴', label: `${stage.consecutiveMissed} missed days — retitration required`,
+        color: '#c02020', bg: '#fff0f0',
+        summary: `⚠️ IMPORTANT: ${stage.consecutiveMissed} consecutive missed days exceeds 5 half-lives of lamotrigine. Per the Lamictal prescribing information and clinical guidelines, resuming at your previous dose without retitration significantly increases the risk of Stevens-Johnson syndrome (SJS), a potentially life-threatening rash. Contact your prescriber before resuming.`,
+        bullets: [
+          '5+ consecutive missed doses: plasma has dropped below safe restart threshold',
+          'SJS rash risk increases significantly if you restart at previous maintenance dose',
+          'Standard guidance: restart at 25mg and re-titrate — this takes weeks',
+          "Do not resume current dose on your own — prescriber contact required",
+          'Mark this in the calendar so your prescriber can see the exact gap'
+        ]
+      }
+    };
+    const s = stages[stage.stage];
+    if (!s) return '';
+    return `<div style="background:${s.bg};border:1px solid ${s.color}44;border-left:4px solid ${s.color};border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+      <div style="font-size:0.78em;font-weight:bold;color:${s.color};margin-bottom:5px;">${s.icon} Lamictal treatment arc — ${s.label}</div>
+      <div style="font-size:0.8em;color:#444;line-height:1.55;margin-bottom:8px;">${s.summary}</div>
+      <div style="font-size:0.75em;color:#555;line-height:1.6;">
+        ${s.bullets.map(b=>`<div style="display:flex;gap:6px;margin-bottom:2px;"><span style="color:${s.color};flex-shrink:0;">·</span><span>${b}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }
+  return '';
+}
+
+function renderTreatmentArcBanner() {
+  const el = document.getElementById('treatmentArcBanner');
+  if (!el) return;
+  if (SLOW_BUILD_DRUGS.includes(activeDrug)) {
+    el.innerHTML = treatmentArcBannerHTML(activeDrug);
+    el.style.display = el.innerHTML ? 'block' : 'none';
+  } else {
+    el.innerHTML = '';
+    el.style.display = 'none';
+  }
+}
+
 function renderZones() {
   const d=DRUGS[activeDrug],v=ST.doses[activeDrug],out=document.getElementById('zonesOut');
   const {zones, adapted} = getEffectiveZones(activeDrug);
@@ -2213,10 +2626,11 @@ function closeLogModal(e) {
 }
 
 function getDoseForDrug(drugKey) {
-  // Returns the active mg dose for drugs with dose selectors, null otherwise
   if (drugKey === 'wellbutrin') return ST.wellbutrinDose || 300;
   if (drugKey === 'lamictal')   return ST.lamictalDose   || 50;
   if (drugKey === 'lexapro')    return ST.lexaproDose    || 10;
+  if (drugKey === 'concerta')   return ST.concertaDose   || 27;
+  if (drugKey === 'remeron')    return ST.remeronDose    || 7.5;
   return null;
 }
 
@@ -2789,9 +3203,13 @@ function renderCalendarStrip() {
       const isPast = dk < todayStr;
       const avg = entries.length ? (entries.reduce((s,e)=>s+e.feel,0)/entries.length) : null;
       const dots = entries.slice(0,3).map(e=>`<div class="cal-dot" style="background:${feelColor(e.feel,'#ccc')};"></div>`).join('');
-      // Missed day = past day with no log
-      const missedBg = (!entries.length && isPast) ? 'background:#fff0f0;' : '';
-      const missedBorder = (!entries.length && isPast) ? 'border-color:#ffcccc;' : '';
+      // Missed day = past day with no log, or explicitly marked
+      const treatMap = SLOW_BUILD_DRUGS.includes(logDrug) ? getTreatmentDateMap(logDrug) : {};
+      const explicitStatus = treatMap[dk]; // 'taken'|'missed'|undefined
+      const isMissed = explicitStatus === 'missed' || (!entries.length && isPast && explicitStatus !== 'taken');
+      const isExplicitTaken = explicitStatus === 'taken' && !entries.length;
+      const missedBg = isMissed ? 'background:#fff0f0;' : (isExplicitTaken ? 'background:#efffef;' : '');
+      const missedBorder = isMissed ? 'border-color:#ffcccc;' : (isExplicitTaken ? 'border-color:#80c880;' : '');
       html += `<div class="cal-day${isSel?' active':''}${isToday?' today':''}" style="${missedBg}${missedBorder}" onclick="calSelectDate('${dk}')">
         <div class="cal-day-label">${dayNames[d.getDay()]}</div>
         <div class="cal-day-num" style="${!entries.length&&isPast?'color:#ffaaaa;':''}">${d.getDate()}</div>
@@ -2800,9 +3218,10 @@ function renderCalendarStrip() {
       </div>`;
     });
     html += '</div>';
-    html += `<div style="font-size:0.72em;color:#aaa;margin-top:3px;display:flex;justify-content:space-between;">
-      <span style="color:#ffaaaa;">■</span> missed &nbsp; <span style="color:#40b060;">■</span> logged
-      <span>${calSelectedDate ? `Showing: ${calSelectedDate} · <span style="cursor:pointer;color:#c070e8;" onclick="calSelectDate(null)">clear</span>` : 'Tap a day to filter'}</span>
+    const showMark = SLOW_BUILD_DRUGS.includes(logDrug);
+    html += `<div style="font-size:0.72em;color:#aaa;margin-top:3px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:3px;">
+      <span><span style="color:#ffaaaa;">■</span> missed &nbsp; <span style="color:#40b060;">■</span> logged${showMark?' &nbsp; <span style="color:#80c880;">■</span> marked taken':''}</span>
+      <span>${calSelectedDate ? `Showing: ${calSelectedDate} · <span style="cursor:pointer;color:#c070e8;" onclick="calSelectDate(null)">clear</span>` : showMark ? 'Tap a day to mark doses' : 'Tap a day to filter'}</span>
     </div>`;
 
     wrap.innerHTML = html;
@@ -2849,10 +3268,16 @@ function renderCalendarStrip() {
         textColor = intensity > 60 ? '#1a5a20' : '#2a8030';
         borderStyle = 'border-color:#80c880;';
       } else if (isPast) {
-        // Missed — red tint
-        bg = '#fff0f0';
-        textColor = '#cc6060';
-        borderStyle = 'border-color:#ffcccc;';
+        const treatMap2 = SLOW_BUILD_DRUGS.includes(logDrug) ? getTreatmentDateMap(logDrug) : {};
+        const exStatus = treatMap2[dk];
+        if (exStatus === 'missed') {
+          bg = '#fff0f0'; textColor = '#cc6060'; borderStyle = 'border-color:#ffcccc;';
+        } else if (exStatus === 'taken') {
+          bg = '#efffef'; textColor = '#2a7a30'; borderStyle = 'border-color:#80c880;';
+        } else {
+          // Missed — red tint
+          bg = '#fff0f0'; textColor = '#cc6060'; borderStyle = 'border-color:#ffcccc;';
+        }
       } else if (isToday) {
         bg = '#fafafa';
         textColor = '#444';
@@ -2893,9 +3318,56 @@ function shiftMonth(dir) {
 }
 
 function calSelectDate(dk) {
-  calSelectedDate = (dk === calSelectedDate) ? null : dk;
+  if (dk === calSelectedDate) {
+    calSelectedDate = null;
+  } else {
+    calSelectedDate = dk;
+  }
+  // For slow-build drugs on a past date, show mark options
+  const todayStr = todayKey();
+  if (SLOW_BUILD_DRUGS.includes(logDrug) && dk && dk <= todayStr) {
+    showMarkDayMenu(dk);
+  }
   renderCalendarStrip();
   renderLogList();
+  renderTreatmentArcBanner();
+}
+
+function showMarkDayMenu(dk) {
+  const existing = (ST.treatmentDates?.[logDrug])?.[dk];
+  const map = getTreatmentDateMap(logDrug);
+  const hasLog = (getLogsForDrug(logDrug)).some(e => e.ts && appDay(e.ts) === dk);
+  const menuId = 'markDayMenu';
+  // Remove existing menu if any
+  const old = document.getElementById(menuId);
+  if (old) old.remove();
+  const d = DRUGS[logDrug] || {};
+  const c = d.color || '#888';
+  const status = map[dk];
+  const menu = document.createElement('div');
+  menu.id = menuId;
+  menu.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:white;border:2px solid ${c};border-radius:12px;padding:14px 16px;box-shadow:0 4px 24px rgba(0,0,0,0.18);min-width:220px;`;
+  menu.innerHTML = `
+    <div style="font-size:0.78em;font-weight:bold;color:${c};margin-bottom:10px;">${dk} — ${(logDrug==='lexapro'?'Lexapro':'Lamictal')} dose</div>
+    ${hasLog ? '<div style="font-size:0.75em;color:#888;margin-bottom:8px;">📝 Has log entry</div>' : ''}
+    <div style="display:flex;flex-direction:column;gap:7px;">
+      <button onclick="markTreatmentDay('${logDrug}','${dk}','taken');document.getElementById('markDayMenu').remove();" 
+        style="padding:8px 12px;border-radius:8px;border:1px solid #40b060;background:#efffef;color:#2a7a30;font-size:0.85em;cursor:pointer;text-align:left;">
+        ✓ Took it — I took ${logDrug==='lexapro'?'Lexapro':'Lamictal'} this day
+      </button>
+      <button onclick="markTreatmentDay('${logDrug}','${dk}','missed');document.getElementById('markDayMenu').remove();" 
+        style="padding:8px 12px;border-radius:8px;border:1px solid #e08080;background:#fff0f0;color:#c03030;font-size:0.85em;cursor:pointer;text-align:left;">
+        ✗ Missed it — I did not take it this day
+      </button>
+      ${existing ? `<button onclick="markTreatmentDay('${logDrug}','${dk}',null);document.getElementById('markDayMenu').remove();" 
+        style="padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:#f9f9f9;color:#888;font-size:0.85em;cursor:pointer;text-align:left;">
+        ↩ Clear mark
+      </button>` : ''}
+    </div>
+    <button onclick="document.getElementById('markDayMenu').remove();calSelectedDate=null;renderCalendarStrip();" 
+      style="margin-top:10px;width:100%;padding:6px;border:none;background:none;color:#aaa;font-size:0.8em;cursor:pointer;">Cancel</button>
+  `;
+  document.body.appendChild(menu);
 }
 
 function entryHTML(e, d) {
@@ -3328,11 +3800,10 @@ function getPersonalCurve(drugKey) {
 }
 
 function getRemeronZones() {
-  // Returns Remeron zones adjusted for biological sex (half-life difference)
-  // Female ~37hr, Male ~26hr — ~40% longer residual for female
-  // Base zones use male as default (conservative — less grogginess)
+  // Returns Remeron zones for the selected dose, adjusted for biological sex
   const sex = ST.sex;
-  const base = DRUGS.remeron.zones;
+  const dose = ST.remeronDose || 7.5;
+  const base = DRUGS.remeron.zonesByDose[dose] || DRUGS.remeron.zonesByDose[7.5];
   if (!sex) return base;
 
   // Half-life ratio: female 37hr / male 26hr = 1.42
@@ -3600,7 +4071,7 @@ function exportLog() {
 
 
 // ─── RENDER ALL ───────────────────────────────────────────────────────────────
-function renderAll() { renderNow(); renderTimeline(); renderZones(); renderLogBtn(); }
+function renderAll() { renderNow(); renderTimeline(); renderZones(); renderLogBtn(); renderTreatmentArcBanner(); }
 
 // ─── TICKER ───────────────────────────────────────────────────────────────────
 let _lastAppDay = todayKey();
