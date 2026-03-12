@@ -3087,7 +3087,6 @@ function renderStreakPanel() {
   const wrap = document.getElementById('streakPanel');
   if (!wrap) return;
   const allLogs = getLogsForDrug(logDrug);
-  if (!allLogs.length) { wrap.innerHTML = ''; return; }
   const d = getDrugForDisplay(logDrug);
 
   // Build set of days that have logs OR a dose time entry
@@ -3096,6 +3095,9 @@ function renderStreakPanel() {
   // Also count days where a dose time was entered (even without a full log)
   const dosedDays = ST.doseDays?.[logDrug] || {};
   Object.keys(dosedDays).forEach(dk => logDays.add(dk));
+
+  // Nothing to show if no activity at all
+  if (!logDays.size) { wrap.innerHTML = ''; return; }
 
   const todayStr = todayKey();
 
@@ -3195,7 +3197,7 @@ function renderStreakPanel() {
     </div>
     <div class="streak-card">
       <div class="streak-num" style="color:#888;">${totalDays}</div>
-      <div class="streak-label">days logged total</div>
+      <div class="streak-label">days tracked total</div>
     </div>
   </div>
   ${outcomeNote ? `<div style="font-size:0.82em;color:#666;background:#f9f9f9;border-radius:8px;padding:8px 12px;margin-top:-4px;border:1px solid #eee;">${outcomeNote}</div>` : ''}`;
@@ -3210,8 +3212,9 @@ function renderCalendarStrip() {
   const wrap = document.getElementById('calendarStrip');
   if (!wrap) return;
   const allLogs = getLogsForDrug(logDrug);
-  // For slow-build drugs, show calendar even with no logs (so users can mark dose days)
-  if (!allLogs.length && !SLOW_BUILD_DRUGS.includes(logDrug)) { wrap.innerHTML=''; return; }
+  const calDosedDays = ST.doseDays?.[logDrug] || {};
+  const hasAnyActivity = allLogs.length > 0 || Object.keys(calDosedDays).length > 0 || SLOW_BUILD_DRUGS.includes(logDrug);
+  if (!hasAnyActivity) { wrap.innerHTML=''; return; }
 
   // Group logs by date
   const byDate = {};
@@ -3220,6 +3223,11 @@ function renderCalendarStrip() {
     const dk = appDay(e.ts);
     if (!byDate[dk]) byDate[dk] = [];
     byDate[dk].push(e);
+  });
+  // Also mark dose-entry days (no log, but dose time was set that day)
+  const calDosed = ST.doseDays?.[logDrug] || {};
+  Object.keys(calDosed).forEach(dk => {
+    if (!byDate[dk]) byDate[dk] = []; // empty array = dosed but no log entry
   });
 
   const todayStr = todayKey();
