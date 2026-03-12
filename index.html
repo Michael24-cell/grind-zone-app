@@ -1072,6 +1072,8 @@ function initDrugNames() {
 }
 
 function launchApp() {
+  ST = loadState(); // re-read in case auth flow re-triggered
+  initDrugNames();
   updateUserPill();
   loadFromUrl();
 
@@ -2701,10 +2703,9 @@ function saveLog() {
 
   if (currentUser) {
     // Save to Supabase
-    supa.from('logs').insert({
+    const insertRow = {
       user_id: currentUser.id,
       drug: entry.drug,
-      dose_mg: entry.dose || null,
       feel: entry.feel,
       tags: entry.tags,
       note: entry.note || null,
@@ -2713,8 +2714,19 @@ function saveLog() {
       elapsed_h: entry.elapsedH || null,
       zone: entry.zone,
       ts: entry.ts
-    }).then(({error}) => {
-      if (error) console.error('Supabase save error:', error);
+    };
+    if (entry.dose != null) insertRow.dose_mg = entry.dose;
+    supa.from('logs').insert(insertRow).then(({error}) => {
+      if (error) {
+        console.error('Supabase save error:', error);
+        // If dose_mg column doesn't exist yet, retry without it
+        if (error.message && error.message.includes('dose_mg')) {
+          const {dose_mg, ...rowWithoutDose} = insertRow;
+          supa.from('logs').insert(rowWithoutDose).then(({error:e2}) => {
+            if (e2) console.error('Retry save error:', e2);
+          });
+        }
+      }
     });
     // Also cache locally for instant UI
     if (!ST.logs) ST.logs = [];
@@ -2773,6 +2785,7 @@ function buildLogTabs() {
     b.onclick = () => { logDrug=COMBO_KEY; calSelectedDate=null; buildLogTabs(); renderLogStats(); renderLogList(); updateLogPageBtn(); };
     bar.appendChild(b);
   }
+  const comboLLLogs = (ST.logs||[]).filter(e=>e.drug===COMBO_KEY_LL);
   if (comboLLLogs.length) {
     const b = document.createElement('button');
     b.className = `tab-btn combo${logDrug===COMBO_KEY_LL?' active':''}`;
@@ -2799,11 +2812,15 @@ async function fetchLogsFromSupabase() {
     .select('*')
     .eq('user_id', currentUser.id)
     .order('ts', { ascending: false });
+  // Only overwrite local logs if fetch succeeded with actual data
+  // A Supabase error (e.g. missing column) must not wipe locally cached logs
   if (error) { console.error('Fetch error:', error); return; }
+  if (!data) return;
   // Map Supabase columns back to local format
-  ST.logs = (data||[]).map(r => ({
+  ST.logs = data.map(r => ({
     id: r.id,
     drug: r.drug,
+    dose: r.dose_mg || null,
     feel: r.feel,
     tags: r.tags || [],
     note: r.note || '',
@@ -3161,7 +3178,8 @@ function renderCalendarStrip() {
   const wrap = document.getElementById('calendarStrip');
   if (!wrap) return;
   const allLogs = getLogsForDrug(logDrug);
-  if (!allLogs.length) { wrap.innerHTML=''; return; }
+  // For slow-build drugs, show calendar even with no logs (so users can mark dose days)
+  if (!allLogs.length && !SLOW_BUILD_DRUGS.includes(logDrug)) { wrap.innerHTML=''; return; }
 
   // Group logs by date
   const byDate = {};
@@ -3318,14 +3336,19 @@ function shiftMonth(dir) {
 }
 
 function calSelectDate(dk) {
-  if (dk === calSelectedDate) {
+  const wasSelected = dk === calSelectedDate;
+  if (wasSelected) {
     calSelectedDate = null;
   } else {
     calSelectedDate = dk;
   }
-  // For slow-build drugs on a past date, show mark options
+  // For slow-build drugs on a past/present date: first tap filters, second tap on same day opens mark menu
   const todayStr = todayKey();
-  if (SLOW_BUILD_DRUGS.includes(logDrug) && dk && dk <= todayStr) {
+  if (!wasSelected && SLOW_BUILD_DRUGS.includes(logDrug) && dk && dk <= todayStr) {
+    // First tap — just filter, but show a hint in the calendar
+    // Menu only on second tap (wasSelected would be true but we already cleared it above)
+    // So: we show the menu when tapping a DIFFERENT day for a slow-build drug
+    // This gives: tap = filter + mark menu appears; tap again = clear filter
     showMarkDayMenu(dk);
   }
   renderCalendarStrip();
