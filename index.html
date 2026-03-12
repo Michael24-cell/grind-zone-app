@@ -2100,11 +2100,20 @@ function getTreatmentDateMap(drugKey) {
 // Get treatment start date (earliest taken day)
 function getTreatmentStartDate(drugKey) {
   if (ST.treatmentStart?.[drugKey]) return ST.treatmentStart[drugKey];
-  // Fall back to oldest log
-  const logs = (ST.logs||[]).filter(e => e.drug === drugKey);
-  if (!logs.length) return null;
-  const oldest = logs.reduce((a, b) => a.ts < b.ts ? a : b);
-  return appDay(oldest.ts);
+  // Fall back to oldest log (including combo logs)
+  const logs = (ST.logs||[]).filter(e =>
+    e.drug === drugKey || e.drug === COMBO_KEY || e.drug === COMBO_KEY_LL
+  );
+  const dates = [];
+  if (logs.length) {
+    const oldest = logs.reduce((a, b) => a.ts < b.ts ? a : b);
+    dates.push(appDay(oldest.ts));
+  }
+  // Also check doseDays — earliest dose entry counts as start
+  const doseDayKeys = Object.keys(ST.doseDays?.[drugKey] || {});
+  if (doseDayKeys.length) dates.push(doseDayKeys.sort()[0]);
+  if (!dates.length) return null;
+  return dates.sort()[0]; // earliest of all sources
 }
 
 // Returns {totalDays, takenDays, missedDays, lastMissedStreak, needsRetitrate}
@@ -3331,22 +3340,37 @@ function renderCalendarStrip() {
       const isPast = dk < todayStr;
       const avg = entries.length ? (entries.reduce((s,e)=>s+e.feel,0)/entries.length) : null;
 
+      // Build logDays set for month view (same logic as streak panel)
+      const monthLogDays = new Set(Object.keys(byDate).filter(k => byDate[k].length > 0));
+      const monthDoseDays = ST.doseDays?.[logDrug] || {};
+      Object.keys(monthDoseDays).forEach(dk2 => monthLogDays.add(dk2));
+
+      // Determine start of activity for this drug (don't mark days before first dose as missed)
+      const monthTreatStart = getTreatmentStartDate(logDrug);
+
       let bg, textColor, borderStyle;
       if (entries.length) {
         // Logged — green tint, intensity from avg feel
-        const intensity = Math.round(((avg||5)-1)/9 * 80 + 20); // 20-100%
+        const intensity = Math.round(((avg||5)-1)/9 * 80 + 20);
         bg = `hsl(130,50%,${100-intensity*0.3}%)`;
         textColor = intensity > 60 ? '#1a5a20' : '#2a8030';
         borderStyle = 'border-color:#80c880;';
       } else if (isPast) {
-        const treatMap2 = SLOW_BUILD_DRUGS.includes(logDrug) ? getTreatmentDateMap(logDrug) : {};
+        const treatMap2 = getTreatmentDateMap(logDrug);
         const exStatus = treatMap2[dk];
+        // Check if this is a dose-entry-only day (no log but dose time entered)
+        const isDoseOnly = (ST.doseDays?.[logDrug])?.[dk];
         if (exStatus === 'missed') {
+          // Explicitly marked missed
           bg = '#fff0f0'; textColor = '#cc6060'; borderStyle = 'border-color:#ffcccc;';
-        } else if (exStatus === 'taken') {
+        } else if (exStatus === 'taken' || isDoseOnly) {
+          // Explicitly taken or dose entered — green even without log
           bg = '#efffef'; textColor = '#2a7a30'; borderStyle = 'border-color:#80c880;';
+        } else if (monthTreatStart && dk >= monthTreatStart && !monthLogDays.has(dk)) {
+          // Past day after treatment started with no activity = missed
+          bg = '#fff0f0'; textColor = '#cc6060'; borderStyle = 'border-color:#ffcccc;';
         } else {
-          // No data — neutral, not red (user may not have started yet or just didn't log)
+          // Before treatment started or no data yet — neutral
           bg = '#f5f5f5'; textColor = '#bbb'; borderStyle = 'border-color:#e8e8e8;';
         }
       } else if (isToday) {
