@@ -35,6 +35,9 @@ body.dark .drug-card-sub { color: #777; }
 body.dark .readme-body p, body.dark .readme-body li { color: #bbb; }
 body.dark .share-url { background: #2a2a2a; border-color: #555; color: #ccc; }
 body.dark .zone-sub { color: #999 !important; }
+/* highlighted zone headers force dark text — sub-elements should follow */
+.zone-hdr[style*='color:#1a1a1a'] .zone-sub, .zone-hdr[style*='color:#1a1a1a'] .you-are-here { color: #555 !important; }
+.zone-hdr[style*='color:#1a1a1a'] .zone-title { color: #1a1a1a !important; }
 body.dark #nowBanner { color: #e0e0e0; }
 
 .content { max-width: 640px; margin: 0 auto; padding: 14px 16px; }
@@ -1034,7 +1037,7 @@ let tickTimer = null;
 
 function loadState() {
   try { const s = localStorage.getItem('gz2'); if(s) return JSON.parse(s); } catch(e){}
-  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false, treatmentDates:{}, treatmentStart:{}};
+  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false, treatmentDates:{}, treatmentStart:{}, doseDays:{}};
 }
 function save() { try { localStorage.setItem('gz2', JSON.stringify(ST)); } catch(e){} }
 
@@ -1345,7 +1348,11 @@ function toggleRevCalc() {
 
 function onDose(v) {
   ST.doses[activeDrug]=v;
-  ST.lastDoseDay = todayKey(); // stamp which logical day these doses belong to
+  ST.lastDoseDay = todayKey();
+  // Stamp this day as a dosed day for streak + treatment arc
+  if (!ST.doseDays) ST.doseDays = {};
+  if (!ST.doseDays[activeDrug]) ST.doseDays[activeDrug] = {};
+  ST.doseDays[activeDrug][todayKey()] = true;
   save(); renderAll(); renderInput(); genShareUrl();
 }
 
@@ -1410,9 +1417,10 @@ function appDay(date) {
 // Same as appDay() but returns today's logical day key
 function todayKey() { return appDay(); }
 function bgZ(z) {
-  if(z.peak)   return 'background:#fffacd;border-left:4px solid #f0c000;';
-  if(z.second) return 'background:#e8e8e8;border-left:4px solid #aaa;';
-  if(z.third)  return 'background:#ffe5cc;border-left:4px solid #e8a060;';
+  // Force dark text on all light-background zones so dark mode stays readable
+  if(z.peak)   return 'background:#fffacd;border-left:4px solid #f0c000;color:#1a1a1a;';
+  if(z.second) return 'background:#e8e8e8;border-left:4px solid #aaa;color:#1a1a1a;';
+  if(z.third)  return 'background:#ffe5cc;border-left:4px solid #e8a060;color:#1a1a1a;';
   return 'border-left:3px solid #ccc;';
 }
 function getZone(dose,zones,elapsedOverride) {
@@ -2071,8 +2079,13 @@ function getTreatmentDateMap(drugKey) {
   logs.forEach(e => {
     if (e.ts) {
       const dk = appDay(e.ts);
-      if (!explicit[dk]) map[dk] = 'taken'; // logs imply taken
+      if (!explicit[dk]) map[dk] = 'taken';
     }
+  });
+  // Also count days where a dose time was entered on the main page
+  const doseDayKeys = Object.keys(ST.doseDays?.[drugKey] || {});
+  doseDayKeys.forEach(dk => {
+    if (!explicit[dk]) map[dk] = 'taken';
   });
   // Explicit marks take priority
   Object.assign(map, explicit);
@@ -3072,9 +3085,12 @@ function renderStreakPanel() {
   if (!allLogs.length) { wrap.innerHTML = ''; return; }
   const d = getDrugForDisplay(logDrug);
 
-  // Build set of days that have logs
+  // Build set of days that have logs OR a dose time entry
   const logDays = new Set();
   allLogs.forEach(e => { if (e.ts) logDays.add(appDay(e.ts)); });
+  // Also count days where a dose time was entered (even without a full log)
+  const dosedDays = ST.doseDays?.[logDrug] || {};
+  Object.keys(dosedDays).forEach(dk => logDays.add(dk));
 
   const todayStr = todayKey();
 
@@ -3639,7 +3655,8 @@ function getAdaptiveNote(drugKey, zoneName) {
 function yoursHTML(drugKey, zoneName, uid) {
   const data = getAdaptiveNote(drugKey, zoneName);
   const d = getDrugForDisplay(drugKey);
-  const count = data ? data.count : ((ST.logs||[]).filter(e=>e.drug===drugKey&&e.zone===zoneName)).length;
+  const logs = (ST.logs||[]).filter(e=>e.drug===drugKey&&e.zone===zoneName);
+  const count = data ? data.count : logs.length;
 
   if (!data) {
     // 0–1 logs — show placeholder with how many more needed
