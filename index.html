@@ -2451,7 +2451,12 @@ function zoneHTML(uid,titleHTML,z,isNow,adapted=false) {
   const nowHdrExtra=isNow?'border-left-width:5px !important;':'';
 
   // Determine if "yours" tab should exist and what the default view is
-  const logCountForZone = (ST.logs||[]).filter(e=>e.drug===activeDrug&&e.zone===z.label).length;
+  // Count logs for this zone — include combo logs (lamictal+lexapro, wellbutrin+remeron)
+  // since those are saved under a combo key, not the individual drug key
+  const logCountForZone = (ST.logs||[]).filter(e=>{
+    const matchesDrug = e.drug===activeDrug || e.drug===COMBO_KEY || e.drug===COMBO_KEY_LL;
+    return matchesDrug && e.zone===z.label;
+  }).length;
   const hasYoursData = logCountForZone >= 1; // show tab even at 1, builds toward 3
   const defaultView = logCountForZone >= 2 ? 'yours' : 'research'; // start on yours once there's real data
   // Store default in ZONE_NOTE_VIEW if not already set
@@ -3638,7 +3643,12 @@ function updateAdaptiveNotes() {
 
 function getAdaptiveNote(drugKey, zoneName) {
   // Returns null if <2 logs, otherwise rich structured data for "yours" panel
-  const logs = (ST.logs||[]).filter(e=>e.drug===drugKey && e.zone===zoneName && e.elapsedH!=null);
+  // Include combo logs — when both drugs are active, logs save under combo key
+  // but they're still relevant for this drug's zone experience
+  const logs = (ST.logs||[]).filter(e=>{
+    const matchesDrug = e.drug===drugKey || e.drug===COMBO_KEY || e.drug===COMBO_KEY_LL;
+    return matchesDrug && e.zone===zoneName && e.elapsedH!=null;
+  });
   if (logs.length < 2) return null;
 
   const d = DRUGS[drugKey];
@@ -3668,68 +3678,93 @@ function getAdaptiveNote(drugKey, zoneName) {
 function yoursHTML(drugKey, zoneName, uid) {
   const data = getAdaptiveNote(drugKey, zoneName);
   const d = getDrugForDisplay(drugKey);
-  const logs = (ST.logs||[]).filter(e=>e.drug===drugKey&&e.zone===zoneName);
+  const logs = (ST.logs||[]).filter(e=>{
+    const matchesDrug = e.drug===drugKey || e.drug===COMBO_KEY || e.drug===COMBO_KEY_LL;
+    return matchesDrug && e.zone===zoneName;
+  });
   const count = data ? data.count : logs.length;
 
-  if (!data) {
-    // 0–1 logs — show placeholder with how many more needed
-    const needed = 3 - count;
+  // Get the research notes for this zone from the drug definition
+  const zoneObj = (DRUGS[drugKey]?.zones||[]).find(z=>z.label===zoneName);
+  const researchNotes = zoneObj?.notes || [];
+
+  // ── Blend model:
+  // 1 log  → research notes dimmed, personal stat bar shown, "building..." hint
+  // 2 logs → research notes present, personal stats overlaid at top
+  // 3+ logs → research notes slightly dimmed, personal data prominent
+  // 6+ logs → personal data leads, research collapsed behind "Research basis" toggle
+  // 10+ logs → research fully secondary, personal experience is the primary view
+
+  if (!count) {
     return `<div style="color:#bbb;font-size:0.88em;padding:6px 0;">
-      Log ${needed} more time${needed===1?'':'s'} in this zone to unlock your personal notes.
-      <div style="margin-top:6px;background:#f5f5f5;border-radius:6px;height:6px;overflow:hidden;">
-        <div style="height:100%;background:#c070e8;width:${Math.round(count/3*100)}%;transition:width 0.3s;"></div>
-      </div>
+      Log 1 time in this zone to start building your personal notes.
     </div>`;
   }
 
-  const { avg, avgElapsed, topTags, feelTrend, recentNotes, color, drugColor } = data;
-  const hrsStr = avgElapsed < 1
-    ? Math.round(avgElapsed*60)+'m after dose'
-    : Math.floor(avgElapsed)+'h '+Math.round((avgElapsed%1)*60)+'m after dose';
+  // Personal stats block (shown at all counts once >= 1)
+  const personalBlock = data ? (() => {
+    const { avg, avgElapsed, topTags, feelTrend, color } = data;
+    const hrsStr = avgElapsed < 1
+      ? Math.round(avgElapsed*60)+'m after dose'
+      : Math.floor(avgElapsed)+'h '+Math.round((avgElapsed%1)*60)+'m after dose';
+    let s = `<div style="background:${color}12;border-radius:8px;padding:8px 10px;margin-bottom:8px;border-left:3px solid ${color}40;">`;
+    s += `<div style="font-size:0.82em;font-weight:bold;color:${color};margin-bottom:4px;">👤 Your data — ${count} log${count===1?'':'s'}</div>`;
+    s += `<div class="zone-yours-item"><span class="zone-yours-stat" style="background:${color}18;color:${color};">${avg.toFixed(1)}/10</span> avg feel · <em style="color:#888;">${feelTrend}</em></div>`;
+    if (count >= 3) s += `<div class="zone-yours-item"><span class="zone-yours-stat">~${hrsStr}</span> avg when you log here</div>`;
+    if (count >= 3 && topTags.length) {
+      const tagHTML = topTags.map(([t,c])=>
+        `<span style="background:${TAG_COLORS[t]}22;color:${TAG_COLORS[t]};border-radius:10px;padding:1px 7px;font-size:0.8em;font-weight:bold;">${t} <span style="opacity:0.6;">${c}x</span></span>`
+      ).join(' ');
+      s += `<div class="zone-yours-item">Common: ${tagHTML}</div>`;
+    }
+    if (count >= 6) {
+      const verdict = avg >= 6.5 ? 'This tends to be a good window for you.' : avg <= 4.5 ? 'This zone has been rough for you consistently.' : 'Your experience here is mixed.';
+      s += `<div class="zone-yours-item" style="color:#666;font-style:italic;">${verdict}</div>`;
+    }
+    // Notes
+    const allNotes = logs.filter(e=>e.note&&e.note.trim()).map(e=>e.note.trim());
+    if (allNotes.length) {
+      const notesUID = uid + '_notes_more';
+      const first = allNotes[0];
+      const rest = allNotes.slice(1);
+      const moreHTML = rest.length ? `<span style="cursor:pointer;color:#c070e8;font-size:0.8em;" onclick="toggleZoneNotes('${notesUID}')"> +${rest.length} more</span>
+        <div id="${notesUID}" style="display:none;margin-top:3px;">
+          ${rest.map(n=>`<div style="color:#888;font-style:italic;margin-top:2px;">"${n}"</div>`).join('')}
+        </div>` : '';
+      s += `<div class="zone-yours-item" style="color:#888;font-style:italic;">"${first}"${moreHTML}</div>`;
+    }
+    s += '</div>';
+    return s;
+  })() : `<div style="color:#bbb;font-size:0.82em;padding:4px 0 8px;">
+    <div style="background:#f5f5f5;border-radius:6px;height:5px;overflow:hidden;margin-top:5px;">
+      <div style="height:100%;background:#c070e8;width:${Math.round(count/2*100)}%;transition:width 0.3s;"></div>
+    </div>
+    <div style="margin-top:4px;">1 more log in this zone to unlock your stats.</div>
+  </div>`;
 
-  let lines = [];
+  // Research notes — shown at all levels, dimmed based on how much personal data exists
+  // opacity: 1 at 0 logs → 0.65 at 3 logs → 0.45 at 6+ logs
+  const researchOpacity = count >= 6 ? 0.45 : count >= 3 ? 0.65 : count >= 1 ? 0.8 : 1;
+  const researchLabel = count >= 6 ? 'Research basis' : count >= 3 ? 'What research says' : 'Research';
+  const researchUID = uid + '_yours_research';
 
-  // ── Always show (2+ logs) ──────────────────────────────────────────────────
-  lines.push(`<div class="zone-yours-item">
-    <span class="zone-yours-stat" style="background:${color}18;color:${color};">${avg.toFixed(1)}/10</span>
-    avg feel across ${count} log${count===1?'':'s'} · <em style="color:#888;">${feelTrend}</em>
-  </div>`);
+  // At 6+ logs, collapse research behind a toggle — personal data leads
+  const researchCollapsed = count >= 6;
+  const researchBlock = researchNotes.length ? `
+    <div style="margin-top:4px;">
+      ${researchCollapsed
+        ? `<div style="font-size:0.78em;color:#bbb;cursor:pointer;margin-bottom:4px;" onclick="toggleZoneNotes('${researchUID}')">▶ ${researchLabel}</div>
+           <div id="${researchUID}" style="display:none;">`
+        : `<div style="font-size:0.78em;color:#aaa;margin-bottom:4px;">${researchLabel}</div>
+           <div id="${researchUID}">`
+      }
+      <ul style="opacity:${researchOpacity};transition:opacity 0.4s;margin:0;padding-left:16px;">
+        ${researchNotes.map(n=>`<li style="font-size:0.84em;color:#666;margin-bottom:3px;">${n}</li>`).join('')}
+      </ul>
+      </div>
+    </div>` : '';
 
-  // ── 3+ logs: add top tags ──────────────────────────────────────────────────
-  if (count >= 3 && topTags.length) {
-    const tagHTML = topTags.map(([t,c])=>
-      `<span style="background:${TAG_COLORS[t]}22;color:${TAG_COLORS[t]};border-radius:10px;padding:1px 8px;font-size:0.82em;font-weight:bold;">${t} <span style="opacity:0.6;">${c}x</span></span>`
-    ).join(' ');
-    lines.push(`<div class="zone-yours-item">Most common: ${tagHTML}</div>`);
-  }
-
-  // ── 3+ logs: timing note ──────────────────────────────────────────────────
-  if (count >= 3) {
-    lines.push(`<div class="zone-yours-item">
-      <span class="zone-yours-stat">~${hrsStr}</span> avg when you log here
-    </div>`);
-  }
-
-  // ── 6+ logs: feel trend sentence ─────────────────────────────────────────
-  if (count >= 6) {
-    const high = data.count > 0 ? (data.avg >= 6.5 ? 'This tends to be a good window for you.' : data.avg <= 4.5 ? 'This zone has been rough for you consistently.' : 'Your experience here varies.') : '';
-    if (high) lines.push(`<div class="zone-yours-item" style="color:#666;font-style:italic;">${high}</div>`);
-  }
-
-  // ── Notes: most recent + collapsed rest ────────────────────────────────
-  const allNotes = logs.filter(e=>e.note&&e.note.trim()).map(e=>e.note.trim());
-  if (allNotes.length && count >= 3) {
-    const first = allNotes[0];
-    const rest = allNotes.slice(1);
-    const notesUID = uid + '_notes_more';
-    const moreHTML = rest.length ? `<span style="cursor:pointer;color:#c070e8;font-size:0.82em;font-style:normal;" onclick="toggleZoneNotes('${notesUID}')"> +${rest.length} more</span>
-      <div id="${notesUID}" style="display:none;margin-top:4px;">
-        ${rest.map(n=>`<div style="color:#888;font-style:italic;margin-top:3px;">"${n}"</div>`).join('')}
-      </div>` : '';
-    lines.push(`<div class="zone-yours-item" style="color:#888;font-style:italic;">"${first}"${moreHTML}</div>`);
-  }
-
-  return lines.join('');
+  return personalBlock + researchBlock;
 }
 
 // ─── ADAPTIVE PEAK CALCULATION ────────────────────────────────────────────────
