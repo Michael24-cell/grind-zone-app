@@ -28,31 +28,11 @@ Auth           OTP 6-digit code (passwordless email) via Supabase Auth
 Database       Postgres — row-level security enforced at DB level, not app code
 
 Local storage  localStorage key "gz2" — doses, active drugs, settings,
-               adaptive state
+               adaptive state, dose day history, treatment start dates
 
 Hosting        Static file — Netlify / Vercel / GitHub Pages ready
-               (drag and drop)
 
 Dependencies   Supabase JS SDK via CDN only — zero other external dependencies
-
-
-DEPLOYMENT
---------------------------------------------------------------------------------
-Single HTML file. No build process required. Deploy by dragging the file to
-Netlify or pushing to any static host. The Supabase project URL and anon key
-are embedded — only the redirect URL configuration in Supabase Auth needs
-updating to match the live domain.
-
-- No server — fully static
-- Works offline after first load (all logic is client-side)
-- Mobile browser compatible — no app store required
-- OTP email template must include {{ .Token }} in Supabase Auth
-  -> Authentication -> Email Templates -> Magic Link
-
-* PLANNED: Zone notes AI summarization via Anthropic API — will send zone-
-  specific log notes to Claude to surface patterns in plain language (e.g.
-  "you often mention feeling rushed during this window"). Per-use API cost.
-  Trigger: "Summarize my notes" button per zone, fires on demand only.
 
 
 DATABASE SCHEMA
@@ -60,357 +40,256 @@ DATABASE SCHEMA
 Table: logs
 
   id           bigserial primary key
-  user_id      uuid — references auth.users, enforces data isolation
-  drug         text — drug key e.g. "ritalin", "wellbutrin",
-               "wellbutrin+remeron" for combo state
-  feel         integer 1-10 — subjective feeling score
-  tags         text[] — array of selected mood/symptom tags
-  note         text — freeform note
-  time         text — HH:MM logged time (may differ from ts if retroactively
-               edited)
+  user_id      uuid references auth.users
+  drug         text — drug key or combo key ("wellbutrin+remeron",
+               "lamictal+lexapro")
+  feel         integer 1-10
+  tags         text[]
+  note         text
+  time         text — HH:MM logged time
   dose_time    text — HH:MM dose time at moment of logging
-  elapsed_h    float — hours elapsed since dose at log time
-  zone         text — zone label at log time (recalculated on time edit)
-  ts           timestamptz — timestamp, default now(), updated on time edit
+  elapsed_h    float — hours since dose at log time
+  zone         text — zone label at log time
+  ts           timestamptz — default now(), updated on time edit
+  dose_mg      integer — mg dose at log time (nullable)
 
-RLS setup:
+Migration: ALTER TABLE logs ADD COLUMN IF NOT EXISTS dose_mg integer;
 
+RLS:
   alter table logs enable row level security;
   create policy "Users see own logs" on logs
     for all using (auth.uid() = user_id);
 
-auth.uid() = user_id is enforced on all operations. Users can never read or
-modify another user's rows, even with a valid session token.
+Insert safety: if dose_mg column missing in production, app auto-retries
+insert without that field — no data loss.
+
+fetchLogsFromSupabase only overwrites local cache on successful non-null
+response. A Supabase error never wipes the local log cache.
 
 
 AUTHENTICATION
 --------------------------------------------------------------------------------
-Passwordless OTP via Supabase Auth. signInWithOtp() without emailRedirectTo
-sends a 6-digit code to the user's email. The user types the code into the app
-and verifyOtp() exchanges it for a session. Omitting emailRedirectTo is what
-tells Supabase to send the OTP code rather than a magic link — this also avoids
-mobile in-app browser redirect failures entirely.
+signInWithOtp() without emailRedirectTo sends 6-digit OTP. verifyOtp()
+exchanges it for a session. Omitting emailRedirectTo avoids magic link
+redirect failures on mobile browsers entirely.
 
-- One auth event per device — session survives page reloads and browser restarts
-- Guest mode: no auth, all data stays in localStorage only
-- Dose times always stay local regardless of auth state — session-specific data
-- Logs sync to Supabase when signed in, with localStorage cache for instant UI
+- Session survives page reloads and browser restarts
+- Guest mode: all data stays in localStorage only
+- Dose times always local regardless of auth state
 
 
-MEDICATIONS COVERED
+MEDICATIONS & DOSE SELECTORS
 --------------------------------------------------------------------------------
-Each drug has research-backed zone definitions derived from published
-pharmacokinetic data including FDA labels, clinical pharmacology studies,
-and peer-reviewed literature.
+All drugs except Ritalin LA have inline dose selectors. setDose(key, mg)
+updates ST.[drug]Dose, annotates the tab name (e.g. "Lexapro · 5mg"),
+rebuilds tabs, re-renders zones. Each dose has distinct zone definitions.
+initDrugNames() restores annotated names on launch from saved state.
 
-Drug              Doses                    Mechanism           Half-life
+Drug              Doses                       Mechanism           Half-life
 ---------------------------------------------------------------------------
-Ritalin LA        --                       DARI -- bimodal     2-3 hr
-Concerta 27mg     --                       DARI -- OROS pump   3.5 hr
-Wellbutrin XL     150 / 300 / 450mg        NDRI                21 hr
-Lamictal          25/50/75/100/150/200mg   Na+ channel block   22-37 hr
-Remeron 7.5mg     --                       NaSSA -- H1+a2      26-37 hr
-Lexapro 10mg      --                       SSRI -- SERT block  27-32 hr
+Ritalin LA        fixed                       DARI — bimodal      2-3 hr
+Concerta          18 / 27 / 36 / 54mg         DARI — OROS pump    3.5 hr
+Wellbutrin XL     150 / 300 / 450mg           NDRI                21 hr
+Lamictal          25/50/75/100/150/200mg      Na+ channel block   22-37 hr
+Remeron           7.5 / 15 / 30mg             NaSSA — H1+a2       26-37 hr
+Lexapro           5 / 10mg                    SSRI — SERT block   27-32 hr
 
-Ritalin LA      IR + delayed bead release. Two distinct peaks ~1.5hr and
-                ~5hr post-dose.
+Concerta    18mg sub-therapeutic for most adults. 27mg standard start.
+            36mg standard adult. 54mg FDA maximum — morning only.
 
-Concerta        Ascending OROS curve. Tmax 6.8hr FDA-confirmed. Peak arrives
-                mid-afternoon by design. No valley between peaks unlike
-                Ritalin LA.
+Wellbutrin  Hydroxybupropion AUC 16x parent. CYP2D6 inhibitor.
+            450mg: seizure risk, cannot dose after noon.
 
-Wellbutrin XL   Tmax ~5hr. Hydroxybupropion is primary active metabolite
-                (AUC 16x parent compound). Potent CYP2D6 inhibitor -- affects
-                all co-administered drugs metabolized by that pathway.
-                Seizure risk is dose-dependent -- ceiling at 450mg.
+Lamictal    No acute effect — cumulative over weeks. 98% bioavailability.
+            75mg = 1.5x plasma of 50mg. Linear pharmacokinetics.
 
-Lamictal        Linear pharmacokinetics -- dose-proportional plasma levels.
-                No acute effect -- cumulative over weeks. 98% bioavailability.
-                75mg is a genuine mid-range clinical dose, common in bipolar
-                II augmentation (1.5x plasma of 50mg).
+Remeron     Paradoxical sedation: 7.5mg most sedating (pure H1), 30mg
+            least sedating (NE activation offsets H1). Antidepressant
+            strongest at higher doses. Sex-adjusted half-life: female
+            ~37hr / male ~26hr. Residual Sedation and Clearing zones
+            extend 1.5-3hr for female.
 
-Remeron 7.5mg   Sex-adjusted zones: female ~37hr half-life, male ~26hr.
-                Residual Sedation and Clearing zones extend 1.5-3hr for
-                female. Most sedating at lowest dose due to pure H1 blockade
-                without competing alpha-2 stimulation.
-
-Lexapro 10mg    Tmax 5hr. Steady state 7-10 days at 2.2-2.5x single-dose
-                levels. Effects are cumulative -- no acute peak feel. SERT
-                near-saturation even at 10mg. 5-HT1A autoreceptor
-                desensitization is the mechanism behind delayed onset
-                (weeks 2-4).
+Lexapro     5mg: ~65-70% SERT occupancy, milder side effects, valid
+            maintenance dose. 10mg: ~80% SERT occupancy. Steady state
+            7-10 days. Effects cumulative — no acute peak.
 
 
-ALGORITHMIC LOGIC
+COMBINATION ENGINES
 --------------------------------------------------------------------------------
 
-Pharmacokinetic Zone Engine
-  Each drug has a zones array of objects with start, end (elapsed hours),
-  label, power score, and zone type flags (peak, second, third).
-  getZone(doseH, zones, elapsedOverride) finds the matching zone by comparing
-  elapsed hours against zone boundaries. The optional elapsedOverride param
-  is used when recalculating zone after a retroactive time edit. All timelines
-  update every 30 seconds via a ticker.
+Wellbutrin + Remeron
+  Four pharmacodynamic phases mapped from the pair of active zone labels:
+  Morning synergy / Daytime peak / Evening transition / Sleep phase.
+  Research: Blier 2010, STAR*D, CO-MED, Millan 2000.
 
-Adaptive Peak Calibration
-  After 6 logged entries with elapsed time data, the app begins shifting zone
-  boundaries to match the user's personal peak timing.
+Lamictal + Lexapro
+  Four combined treatment arc stages:
+  Both building (<3 wks) / Foundation setting (3-6 wks) /
+  Full combination (6-12 wks) / Maintenance (12+ wks).
+  Research: Nierenberg 2006, Barbee 2004, Geddes 2016.
 
-  Algorithm:
-  1. Buckets feel scores into 0.2-hour (12-minute) elapsed-time windows.
-     Chosen over the previous 0.5hr to resolve shifts above the 20-minute
-     minimum threshold.
+  When Lam+Lex combo is active, individual treatment arc banners suppressed.
+  The combo panel is authoritative for both drugs.
 
-  2. Adds 8 phantom "anchor" entries at the pharmacokinetic default peak
-     (feel=8) -- resists early drift. Adjacent buckets get 40% weight anchors
-     for smooth falloff.
-
-  3. Applies exponential decay weighting: newest = 1.0, each older entry
-     multiplied by 0.88. Recent experience counts more.
-
-  4. Threshold for peak bucket inclusion: Math.floor(topScore) - 1.
-     If the best bucket averages 8.3, all buckets scoring 7.0+ are included
-     in the centroid. If best is 7.1, all 6.0+ are included.
-     This respects integer feel boundaries -- a logged 7 always counts when
-     the peak is in the 8s. Previous 85% rule was scale-dependent and could
-     inconsistently cut off same-integer scores.
-
-  5. Calculates weighted centroid of qualifying buckets, derives shift from
-     pharmacokinetic default, clamps to per-drug maximum.
-
-  6. Confidence score derived from log count and high-feel entry count --
-     shown in calibration banner with shift direction and "view curve ->"
-     link to the Your Curve page.
-
-  Per-drug shift ceilings:
-    Ritalin    +/-2hr  (second peak range 3-10hr)
-    Concerta   +/-2hr  (FDA Tmax SD +/-1.8hr)
-    Wellbutrin +/-2hr  (flagged "highly variable" by FDA)
-    Lamictal   +/-1.5hr
-    Remeron    +/-1.5hr
-    Lexapro    +/-1hr
-
-Your Curve Page
-  Separate page accessible via "view curve ->" in the adaptive calibration
-  banner. Shows one card per active drug with log data. Each card contains:
-
-  - SVG chart with three layers:
-      Grey line     pharmacokinetic default curve
-      Color line    your personal calibrated curve (when adapted)
-      Scatter dots  every individual log entry, colored by feel score
-  - Dashed vertical line at your personal peak, lighter dashed at default
-    peak -- shift is visible at a glance
-  - Shift summary, confidence %, entry count below chart
-  - Progress bar toward calibration if under 6 entries
-
-  renderCurvePage() builds all active-drug cards. curveCardHTML(drugKey)
-  generates the SVG and stats for one drug. Zone power levels are mapped to
-  a 1-9 numeric scale to draw the curve shape.
-
-Wellbutrin + Remeron Interaction Engine
-  When both drugs have dose times entered, the app detects the current combo
-  phase and renders a live interaction panel. The engine maps the pair of
-  active zone labels to one of four pharmacodynamic phases:
-
-  Morning synergy    Wellbutrin building + Remeron residual. Both drugs
-                     elevating NE simultaneously via different mechanisms
-                     (a2 blockade + reuptake inhibition).
-
-  Daytime peak       Wellbutrin at full effect + Remeron at baseline.
-                     Chronic receptor-level changes active in background.
-                     Full NE/DA activation.
-
-  Evening transition Both tapering. Cumulative steady-state effects fully
-                     established. Natural wind-down window.
-
-  Sleep phase        Remeron peaking overnight. Deep sedation, slow-wave
-                     sleep enhancement, Wellbutrin cleared.
-
-  Research basis: Blier et al. 2010 (46% vs 25% remission double-blind RCT),
-  STAR*D, CO-MED trial, Millan 2000 a2 blockade mechanism, Stahl bupropion
-  NE/DA review.
-
-  Combo logs saved under virtual key "wellbutrin+remeron" -- zone stored is
-  the combo phase name. Combo tab appears in log page once combo entries exist.
-
-3AM Day Rollover
-  Logical day boundaries at 3am instead of midnight.
-
-  Two-layer rollover system:
-  1. Live ticker: checks every 30 seconds, clears doses and shows banner.
-  2. Startup check: compares ST.lastDoseDay to todayKey() on launch, clears
-     silently if different. Handles app-closed-overnight case.
-
-  ST.lastDoseDay stamped in onDose() and loadFromUrl().
-
-Sex-Adjusted Remeron Zones
-  Selector on Remeron tab adjusts zone durations. Female ~37hr / male ~26hr.
-  Residual Sedation: 5-8hr male / 5-9.5hr female.
-  Clearing: 8-11hr male / 9.5-14hr female.
-  getEffectiveZones() applies sex adjustment before adaptive shifts.
+Combo logs saved under virtual key "wellbutrin+remeron" or "lamictal+lexapro".
+Combo tab appears in log page once combo entries exist.
+Zone counts, Yours panel, and adaptive calibration all include combo logs
+for each constituent drug.
 
 
-ZONE NOTES — RESEARCH vs YOURS TOGGLE
+TREATMENT ARC SYSTEM (Lexapro + Lamictal)
 --------------------------------------------------------------------------------
-Each zone dropdown has a Research / Yours tab toggle once any logs exist
-for that zone.
+Tracks pharmacological progress for slow-build drugs. Banner shown on home
+page for each drug (or replaced by combo panel when both are active).
 
-  Research tab    Default pharmacokinetic notes, always available.
+Day counting uses: explicit calendar marks + log entries.
+ST.doseDays (dose time entries) count toward streak only, NOT arc days.
+Arc days require confirmed dose events (log or explicit mark).
+Unknown past days between start and today assumed taken (generous default).
 
-  Yours tab       Builds progressively based on log count in that zone:
+Lexapro stages (takenDays):
+  day1_3 / week1_2 / week2_4 / week4_8 / established (42+)
+  gap_minor (2-4 missed) / gap_significant (5+ missed)
 
-    1 log         Tab appears labeled "Yours 1/3" with progress bar.
-                  Still defaults to Research view.
+Lamictal stages (takenDays):
+  titrating (1-14) / establishing (14-42) / building (42-90) / established (90+)
+  gap_warning (2-4 missed) / retitrate_needed (5+ consecutive missed)
+  LAMICTAL_RESTART_THRESHOLD_DAYS = 5
 
-    2 logs        Defaults to Yours. Shows avg feel + feel trend label
-                  (mostly good / often rough / mixed).
-
-    3+ logs       Adds top tags with frequency counts and color-coded pills.
-                  Adds timing note (avg elapsed hours when logging here).
-
-    4+ logs       Most recent note shown as italic quote. Additional notes
-                  collapsed under "+N more" link that expands inline.
-
-    6+ logs       One-sentence interpretation added: "This tends to be a
-                  good window for you" / "This zone has been rough" /
-                  "Your experience here varies" -- derived from avg feel
-                  above 6.5, below 4.5, or in between.
-
-  Zone header shows a small "N logs" badge when data exists so you can
-  see at a glance which zones you have personal data for before opening.
-
-* PLANNED: "Summarize my notes" button per zone -- sends all notes written
-  in that zone to the Anthropic API and returns a plain-language pattern
-  summary (e.g. "you often mention feeling rushed or scattered during this
-  window"). Fires on demand to avoid unnecessary API cost.
+Retroactive calendar marking:
+  Tapping a past day for Lexapro/Lamictal opens floating mark menu.
+  Marks saved to ST.treatmentDates[drug][YYYY-MM-DD].
+  ST.treatmentStart[drug] tracks earliest confirmed date.
+  Explicit "taken" marks show green in calendar without a log entry.
 
 
-PATTERN DETECTION (Log Page)
+STREAK & DOSE TRACKING
 --------------------------------------------------------------------------------
-Collapsible "Your patterns" section on the log page. Unlocks at 8+ entries
-for the selected drug. Three cards surface when enough data exists:
+ST.doseDays[drugKey][YYYY-MM-DD] = true stamped in onDose() per drug.
 
-Tag patterns
-  Compares tag frequency between high-feel days (7+) and low-feel days (4
-  and under). Tags appearing in 25%+ of either group with 2+ occurrences
-  surface as "On good days: focused 5x calm 3x" / "On rough days: anxious
-  4x tired 3x". Color-coded with TAG_COLORS.
+A day counts as "tracked" if it has a log entry OR a dose time entry.
+Streak, week dots, calendar, and "days tracked total" all use merged set.
+Arc day count uses only confirmed events (see above).
+Streak panel renders with zero logs as long as dose entries exist.
 
-Timing patterns
-  Buckets logged entries into 1-hour elapsed-time windows. Compares avg feel
-  per window. Surfaces best and worst windows when 2+ windows have 2+ entries.
-  Example: "Best window: 3-4hr after dose -- 7.8 avg".
+Adherence cards (log page):
+  Streak         Consecutive tracked days back from today.
+  This week      7-day dot grid. Green = tracked, red = missed past day.
+  Total days     Distinct tracked days (logs + dose entries).
 
-Dose-time patterns
-  Splits entries into before-9am doses vs 9am+ doses. Only renders if
-  difference is 0.5+ points and each group has 3+ entries. States which
-  timing tends to land better for this person.
-
-All three cards are independent -- only the ones with sufficient data appear.
-The panel stays collapsed by default; state persists within the session.
+Outcome comparison (10+ logs):
+  Avg feel on 7+ day streaks vs days after a gap.
+  Renders only when diff 0.4+ and both groups have 3+ entries.
 
 
-ADHERENCE & STREAK TRACKING (Log Page)
+ZONE NOTES — RESEARCH vs YOURS BLEND
 --------------------------------------------------------------------------------
-Three-card panel at top of log page, per selected drug.
+Yours view blends research content with personal data progressively.
+Research notes are never removed — they fade as personal data accumulates.
 
-Streak card
-  Counts consecutive days with at least one log entry back from today.
-  Color scale: yellow (1 day) -> amber (3+) -> light green (7+) ->
-  dark green (14+) -> darker green (14+ with fire emoji).
-  If today has no log yet, streak counts from yesterday.
+  1 log    Personal stat block + progress bar. Research at 80% opacity.
+  2 logs   Personal stats active (avg feel, trend). Research at 80%.
+  3+ logs  Personal leads: avg, timing, top tags. Research dims to 65%.
+  6+ logs  Verdict sentence added. Research collapses to toggle at 45%.
+  10+ logs Personal fully primary.
 
-This week card
-  Shows 7 dot indicators for the last 7 days.
-  Green check = logged, red X = missed past day, grey = today/future.
+Zone header badge shows "N logs" before opening zone.
+Log counts include combo logs for each drug.
 
-Total days card
-  Count of distinct days with any log for this drug.
 
-Streak outcome bar (10+ logs required)
-  Appears below the three cards when data shows a real pattern (0.4+ point
-  difference). Compares avg feel on days within a 7+ day streak vs days
-  after a gap. Example: "On 7+ day streaks you avg 7.2 vs 5.8 after gaps".
-  Only renders when the comparison is statistically meaningful.
+ADAPTIVE PEAK CALIBRATION
+--------------------------------------------------------------------------------
+Activates at 6 logged entries with elapsed time data.
 
-Monthly calendar view
-  Strip/Month toggle above the 30-day calendar strip. Month view is a full
-  7-column grid with left/right arrows to navigate previous months.
-  Green tint = logged (intensity scales with avg feel).
-  Red tint = missed past day.
-  Grey = upcoming.
-  Tapping any day filters the log list same as the strip.
+  0.2hr (12-min) buckets. 8 phantom anchors at PK default peak (feel=8).
+  Exponential decay weight: newest=1.0, each older * 0.88.
+  Peak threshold: floor(topScore) - 1.
+  Weighted centroid clamped to per-drug maximum shift.
+
+Shift ceilings: Ritalin ±2hr, Concerta ±2hr, Wellbutrin ±2hr,
+                Lamictal ±1.5hr, Remeron ±1.5hr, Lexapro ±1hr
+
+Your Curve page: SVG with default curve (grey), personal curve (color),
+scatter dots per log entry, shift summary, confidence %.
+
+
+CALENDAR
+--------------------------------------------------------------------------------
+Strip view    30-day horizontal. Dose-entry days show as empty green cells.
+Month view    7-column grid with month navigation arrows.
+              Green = logged. Red = explicitly marked missed.
+              Grey = no data or future. Past days with no data are GREY not red.
+
+Date math: appDay() uses local getFullYear/getMonth/getDate — NOT
+toISOString() which shifts dates in non-UTC timezones.
 
 
 LOG SYSTEM
 --------------------------------------------------------------------------------
+32 tags in 4 groups. Feel 1-10. Freeform note. Time editable retroactively.
+By-day (10 days) and by-cycle (grouped by zone) views.
+Filters: all / high / mid / low / has tags / has notes.
 
-Features:
-- Feel score 1-10 with 32 mood/symptom tags organized in 4 groups and
-  freeform note
-- Log time editable retroactively -- elapsed hours and zone recalculate
-- By day view: last 10 days newest-first, most recent 3 days open
-- By cycle view: entries grouped by zone
-- 30-day calendar strip or full monthly grid view
-- Filters: all / high (7+) / mid (4-6) / low (1-3) / has tags / has notes
-- Adaptive calibration banner with "view curve ->" link
-
-Tags (32 total, organized by group):
-
-  Mood (13):    calm, content, grounded, steady, baseline, motivated,
-                euphoric, moody, irritable, emotional, low, flat, blunted
-
-  Mental (8):   focused, productive, clear, creative, scattered,
-                overthinking, spacy, foggy
-
-  Energy (10):  energized, tired, tense, restless, wired, crashed,
-                headache, dry mouth, suppressed appetite, nauseous
-
-  Social (3):   talkative, social battery low, withdrawn
-
-  Previously removed as redundant: jittery (-> restless), hyperfocused
-  (-> focused), sluggish (-> tired).
-
-Data flow:
-  saveLog()               Writes to Supabase + caches locally
-  fetchLogsFromSupabase() Fetches on log page open, overwrites local cache
-  saveEditTime()          Updates local entry, syncs to Supabase
-  deleteLog()             Removes from Supabase and local cache
-  Guest mode              All operations localStorage only
+Data flow: saveLog() -> Supabase + local cache.
+fetchLogsFromSupabase() on page open — safe overwrite only.
+deleteLog() / saveEditTime() sync both stores.
 
 
-PERFORMANCE
+PATTERN DETECTION
 --------------------------------------------------------------------------------
-- 30-second ticker rerenders only nowBanner and timeline
-- Logs rendered from localStorage cache instantly -- Supabase fetch updates
-  in background (optimistic UI)
-- Adaptive curve recalculates on render -- pure math, negligible cost
-- Calendar strip scrollLeft set after render to avoid layout thrash
-- By-day view caps at 10 days; by-cycle groups rather than paginates
-- Single file, no build step -- zero overhead from module bundlers
-- goPage('main') always rebuilds tabs and resyncs activeDrug on return
+8+ entries required. Three independent cards:
+  Tag patterns      High-feel vs low-feel tag frequency comparison.
+  Timing patterns   Best/worst 1-hour elapsed-time windows.
+  Dose-time         Before/after 9am split (0.5+ point diff, 3+ per group).
 
 
-DOSE SELECTOR
+DARK MODE
 --------------------------------------------------------------------------------
-Wellbutrin XL and Lamictal have inline dose selectors. Selecting a dose
-updates ST.wellbutrinDose or ST.lamictalDose, calls setDose() which updates
-the name, rebuilds tabs, re-renders zones. Each dose has separate zone
-definitions. Selections persist in localStorage.
+Full toggle, persisted. bgZ() forces color:#1a1a1a inline on all highlighted
+zone headers (peak/peach/grey backgrounds) — inline styles cannot be
+overridden by dark mode CSS, ensuring readable text on light backgrounds.
 
-Wellbutrin XL:
-  150mg  Starting dose -- gentler curve, less anxiety/jitter risk
-  300mg  Standard therapeutic -- hydroxybupropion AUC ~16x parent compound
-  450mg  Max dose -- seizure risk increases, CYP2D6 inhibition significant,
-         most patients cannot dose after noon
 
-Lamictal:
-  25mg   Titration -- sub-therapeutic, safety phase only
-  50mg   Early therapeutic range
-  75mg   Mid-range sweet spot -- 1.5x plasma of 50mg, real effect
-  100mg  Standard maintenance -- full therapeutic plasma range (1-4 mg/L)
-  150mg  Upper standard -- most patients dose at night
-  200mg  Maximum standard dose -- never stop abruptly (seizure risk)
+KEY STATE (localStorage "gz2")
+--------------------------------------------------------------------------------
+ST.doses{}           Dose times per drug
+ST.active[]          Active drug keys
+ST.dark              Dark mode
+ST.lastDoseDay       Logical date of last dose entry
+ST.adaptiveOff{}     Per-drug adaptive disable flag
+ST.logs[]            Local log cache
+ST.sex               'female' | 'male' | null
+ST.wellbutrinDose / lamictalDose / lexaproDose / concertaDose / remeronDose
+ST.treatmentDates{}  Per drug per date: 'taken' | 'missed'
+ST.treatmentStart{}  Per drug: earliest confirmed dose date (YYYY-MM-DD)
+ST.doseDays{}        Per drug per date: true when dose time entered
+                     (streak tracking only — not arc day count)
+
+
+ALGORITHMIC NOTES
+--------------------------------------------------------------------------------
+getEffectiveZones(drugKey)    Sex adjustment then adaptive shift. All zone
+                               rendering goes through this function.
+
+getTreatmentDateMap(drugKey)  Merges explicit marks + log-inferred days.
+                               doseDays excluded intentionally.
+
+Combo log counting            Any log count must include combo keys:
+  filter(e => e.drug===drugKey ||
+              e.drug===COMBO_KEY ||
+              e.drug===COMBO_KEY_LL)
+  Applies to: logCountForZone, getAdaptiveNote, yoursHTML, getPersonalCurve.
+
+3AM rollover                  appDay() subtracts 1 day when hours < 3.
+
+
+DEPLOYMENT NOTES
+--------------------------------------------------------------------------------
+- OTP email template must include {{ .Token }} in Supabase
+  Auth -> Email Templates -> Magic Link
+- No build step — drag single HTML file to Netlify/Vercel
+- Supabase URL and anon key embedded in file
+- Run dose_mg migration on existing database before deploying
 
 
 DISCLAIMER
@@ -418,7 +297,7 @@ DISCLAIMER
 Not medical advice. Pharmacokinetic timings are based on published data and
 vary between individuals. Adaptive calibration reflects logged subjective
 experience, not clinical guidance. The combination interaction engine describes
-pharmacodynamic mechanisms from published research -- it does not constitute
+pharmacodynamic mechanisms from published research — it does not constitute
 clinical recommendations. Always follow your prescriber's instructions.
 
 ================================================================================
