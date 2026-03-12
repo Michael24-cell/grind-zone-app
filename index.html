@@ -2079,8 +2079,10 @@ function getTreatmentDateMap(drugKey) {
   const map = {}; // dateKey -> 'taken'|'missed'
   // Explicit marks override everything
   const explicit = (ST.treatmentDates?.[drugKey]) || {};
-  // Infer from logs — any log for this drug = taken that day
-  const logs = (ST.logs||[]).filter(e => e.drug === drugKey);
+  // Infer from logs — any log for this drug (or combo including this drug) = taken
+  const logs = (ST.logs||[]).filter(e =>
+    e.drug === drugKey || e.drug === COMBO_KEY || e.drug === COMBO_KEY_LL
+  );
   logs.forEach(e => {
     if (e.ts) {
       const dk = appDay(e.ts);
@@ -2685,7 +2687,7 @@ function saveLog() {
     const [dh,dm] = v.split(':').map(Number), dose=dh+dm/60;
     const elap = ((logH-dose)%24+24)%24;
     elapsedH = elap;
-    zoneName = getZone(dose, d.zones).label;
+    zoneName = getZone(dose, getEffectiveZones(activeDrug).zones, elap).label;
   }
 
   // If both wellbutrin+remeron active, attribute to combo key
@@ -3091,7 +3093,10 @@ function streakColor(n) {
 function renderStreakPanel() {
   const wrap = document.getElementById('streakPanel');
   if (!wrap) return;
-  const allLogs = getLogsForDrug(logDrug);
+  // Include combo logs for streak — when both drugs active, logs save under combo key
+  const allLogs = (ST.logs||[]).filter(e =>
+    e.drug === logDrug || e.drug === COMBO_KEY || e.drug === COMBO_KEY_LL
+  ).sort((a,b) => b.id - a.id);
   const d = getDrugForDisplay(logDrug);
 
   // Build set of days that have logs OR a dose time entry
@@ -3221,9 +3226,12 @@ function renderCalendarStrip() {
   const hasAnyActivity = allLogs.length > 0 || Object.keys(calDosedDays).length > 0 || SLOW_BUILD_DRUGS.includes(logDrug);
   if (!hasAnyActivity) { wrap.innerHTML=''; return; }
 
-  // Group logs by date
+  // Group logs by date — include combo logs for this drug
   const byDate = {};
-  allLogs.forEach(e => {
+  const allLogsWithCombo = (ST.logs||[]).filter(e => {
+    return e.drug === logDrug || e.drug === COMBO_KEY || e.drug === COMBO_KEY_LL;
+  });
+  allLogsWithCombo.forEach(e => {
     if (!e.ts) return;
     const dk = appDay(e.ts);
     if (!byDate[dk]) byDate[dk] = [];
@@ -3232,7 +3240,7 @@ function renderCalendarStrip() {
   // Also mark dose-entry days (no log, but dose time was set that day)
   const calDosed = ST.doseDays?.[logDrug] || {};
   Object.keys(calDosed).forEach(dk => {
-    if (!byDate[dk]) byDate[dk] = []; // empty array = dosed but no log entry
+    if (!byDate[dk]) byDate[dk] = [];
   });
 
   const todayStr = todayKey();
