@@ -1411,7 +1411,12 @@ function appDay(date) {
   const d = date ? new Date(date) : new Date();
   // If it's before 3am, it belongs to the previous calendar day
   if (d.getHours() < 3) d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  // Use LOCAL date formatting — toISOString() converts to UTC which shifts dates
+  // in non-UTC timezones, making future dates appear as past
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
 }
 
 // Same as appDay() but returns today's logical day key
@@ -2082,11 +2087,9 @@ function getTreatmentDateMap(drugKey) {
       if (!explicit[dk]) map[dk] = 'taken';
     }
   });
-  // Also count days where a dose time was entered on the main page
-  const doseDayKeys = Object.keys(ST.doseDays?.[drugKey] || {});
-  doseDayKeys.forEach(dk => {
-    if (!explicit[dk]) map[dk] = 'taken';
-  });
+  // NOTE: doseDays (dose time entries) intentionally NOT included here.
+  // They count toward the streak but not the treatment arc —
+  // arc days should only be confirmed by actual log entries or explicit marks.
   // Explicit marks take priority
   Object.assign(map, explicit);
   return map;
@@ -2393,7 +2396,9 @@ function treatmentArcBannerHTML(drugKey) {
 function renderTreatmentArcBanner() {
   const el = document.getElementById('treatmentArcBanner');
   if (!el) return;
-  if (SLOW_BUILD_DRUGS.includes(activeDrug)) {
+  // Hide individual arc when combo LL is active — combo panel covers both drugs together
+  // showing both would contradict each other (different day counts, different stage systems)
+  if (SLOW_BUILD_DRUGS.includes(activeDrug) && !isComboLLActive()) {
     el.innerHTML = treatmentArcBannerHTML(activeDrug);
     el.style.display = el.innerHTML ? 'block' : 'none';
   } else {
@@ -3320,8 +3325,8 @@ function renderCalendarStrip() {
         } else if (exStatus === 'taken') {
           bg = '#efffef'; textColor = '#2a7a30'; borderStyle = 'border-color:#80c880;';
         } else {
-          // Missed — red tint
-          bg = '#fff0f0'; textColor = '#cc6060'; borderStyle = 'border-color:#ffcccc;';
+          // No data — neutral, not red (user may not have started yet or just didn't log)
+          bg = '#f5f5f5'; textColor = '#bbb'; borderStyle = 'border-color:#e8e8e8;';
         }
       } else if (isToday) {
         bg = '#fafafa';
