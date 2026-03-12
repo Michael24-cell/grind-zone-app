@@ -3623,6 +3623,78 @@ function deleteLog(id) {
   renderLogStats(); renderLogList(); updateAdaptiveNotes(); renderAll();
 }
 
+function openEditTime(id) {
+  const panel = document.getElementById('edittime_' + id);
+  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function closeEditTime(id) {
+  const panel = document.getElementById('edittime_' + id);
+  if (panel) panel.style.display = 'none';
+}
+
+function saveEditTime(id) {
+  const input = document.getElementById('etInput_' + id);
+  if (!input || !input.value) return;
+  const newTime = input.value; // HH:MM
+
+  const entry = (ST.logs||[]).find(e => e.id === id);
+  if (!entry) return;
+
+  // Recalculate elapsed hours from the dose time saved with this entry
+  const doseTime = entry.doseTime;
+  let newElapsed = null;
+  let newZone = entry.zone;
+
+  if (doseTime) {
+    const [dh, dm] = doseTime.split(':').map(Number);
+    const [lh, lm] = newTime.split(':').map(Number);
+    const doseH = dh + dm/60;
+    const logH  = lh + lm/60;
+    newElapsed = ((logH - doseH) % 24 + 24) % 24;
+
+    // Recalculate zone from elapsed time
+    const drug = entry.drug === COMBO_KEY ? 'wellbutrin' :
+                 entry.drug === COMBO_KEY_LL ? 'lexapro' :
+                 entry.drug;
+    if (DRUGS[drug]) {
+      const { zones } = getEffectiveZones(drug);
+      const z = getZone(doseH, zones, newElapsed);
+      if (z) newZone = z.label;
+    }
+  }
+
+  // Update ts to same calendar date but new HH:MM
+  let newTs = entry.ts;
+  try {
+    const oldDate = new Date(entry.ts);
+    const [nh, nm] = newTime.split(':').map(Number);
+    oldDate.setHours(nh, nm, 0, 0);
+    newTs = oldDate.toISOString();
+  } catch(e) {}
+
+  // Update local entry
+  entry.time    = newTime;
+  entry.elapsedH = newElapsed;
+  entry.zone    = newZone;
+  entry.ts      = newTs;
+  save();
+
+  // Sync to Supabase
+  if (currentUser) {
+    supa.from('logs').update({
+      time: newTime,
+      elapsed_h: newElapsed,
+      zone: newZone,
+      ts: newTs
+    }).eq('id', id).eq('user_id', currentUser.id)
+      .then(({error}) => { if (error) console.error('Edit time sync error:', error); });
+  }
+
+  closeEditTime(id);
+  renderLogStats(); renderLogList(); updateAdaptiveNotes(); renderAll();
+}
+
 function feelColor(f, defaultColor) {
   if (f>=8) return '#2a9d4a';
   if (f>=6) return '#88b030';
@@ -3744,7 +3816,7 @@ function yoursHTML(drugKey, zoneName, uid) {
 
   // Research notes — shown at all levels, dimmed based on how much personal data exists
   // opacity: 1 at 0 logs → 0.65 at 3 logs → 0.45 at 6+ logs
-  const researchOpacity = count >= 6 ? 0.45 : count >= 3 ? 0.65 : count >= 1 ? 0.8 : 1;
+  const researchOpacity = 1; // research notes always full opacity
   const researchLabel = count >= 6 ? 'Research basis' : count >= 3 ? 'What research says' : 'Research';
   const researchUID = uid + '_yours_research';
 
