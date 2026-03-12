@@ -2391,7 +2391,18 @@ function renderTreatmentArcBanner() {
 
 function renderZones() {
   const d=DRUGS[activeDrug],v=ST.doses[activeDrug],out=document.getElementById('zonesOut');
-  const {zones, adapted} = getEffectiveZones(activeDrug);
+  if (!out) return;
+  if (!d) { out.innerHTML=''; return; }
+  let zones, adapted;
+  try {
+    const eff = getEffectiveZones(activeDrug);
+    zones = eff.zones; adapted = eff.adapted;
+  } catch(e) {
+    console.error('renderZones getEffectiveZones crash:', e);
+    out.innerHTML = '<div style="color:red;padding:10px;font-size:0.8em;">Zone render error: '+e.message+'</div>';
+    return;
+  }
+  if (!zones || !zones.length) { out.innerHTML=''; return; }
 
   if(!v){
     let h=`<div class="section-label">Zones — tap any to expand</div>`;
