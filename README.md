@@ -6,7 +6,6 @@ Grind-Zone combines published pharmacokinetic data with user logs to estimate re
 
 Built as a lightweight, single-page application focused on time-based modeling, adaptive systems, and real-world behavioral data.
 
-================================================================================
 GRIND-ZONE — Technical README
 Medication Timing + Mood Tracking
 ================================================================================
@@ -14,14 +13,13 @@ Medication Timing + Mood Tracking
 
 WHAT IS THIS?
 --------------------------------------------------------------------------------
-Grind-Zone is a pharmacokinetic-aware medication timing and mood tracking tool.
-Enter when you took your pill — see exactly what neurochemical zone you are in,
-when your peak hits, and when effects wind down. Log how you feel throughout the
-day and the app slowly calibrates to your personal timing curve.
+Grind-Zone was built to make medication effects visible over time — not just when a dose is taken, but how it evolves across the day.
 
-Built for personal use. No existing tool explained what was actually happening in
-your brain at 2pm vs 8am on a given medication regimen, or what two
-co-administered drugs were doing to each other in real time.
+Instead of relying on static averages, the system tracks real user input and shows which pharmacokinetic phase you are in, when peaks occur, and how effects transition and decline.
+
+Log how you feel throughout the day and the system gradually calibrates to your individual response curve.
+
+Built for personal use. No existing tool explained what was actually happening at 2pm versus 8am on a given medication regimen, or how multiple drugs interacted in real time.
 
 
 STACK & ARCHITECTURE
