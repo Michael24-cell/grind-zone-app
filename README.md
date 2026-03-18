@@ -1,5 +1,11 @@
-# grind-zone-app
-Tracks pill time taken, outputs times and zones throughout day with feelings expected. Adaptive calibration system.
+# Grind-Zone
+
+Tracks medication timing and models how drug effects evolve throughout the day, with adaptive calibration based on user-reported data.
+
+Grind-Zone combines published pharmacokinetic data with user logs to estimate real-time effect phases, peak timing, and interaction behavior between medications. The system adapts over time, calibrating predictions to individual response patterns.
+
+Built as a lightweight, single-page application focused on time-based modeling, adaptive systems, and real-world behavioral data.
+
 ================================================================================
 GRIND-ZONE — Technical README
 Medication Timing + Mood Tracking
