@@ -25,7 +25,7 @@ Backend        Supabase (Postgres + Auth)
 
 Auth           OTP 6-digit code (passwordless email) via Supabase Auth
 
-Database       Postgres — row-level security enforced at DB level, not app code
+Database       Postgres: row-level security enforced at DB level, not app code
 
 Local storage  localStorage key "gz2" — doses, active drugs, settings,
                adaptive state, dose day history, treatment start dates
