@@ -1,5 +1,8 @@
 # Grind-Zone
 
+Live Demo: [https://your-app-link.com](https://grind-zone-app-355u.vercel.app/)
+
+
 Tracks medication timing and models how drug effects evolve throughout the day, with adaptive calibration based on user-reported data.
 
 Grind-Zone combines published pharmacokinetic data with user logs to estimate real-time effect phases, peak timing, and interaction behavior between medications. The system adapts over time, calibrating predictions to individual response patterns.
