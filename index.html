@@ -1402,7 +1402,7 @@ let tickTimer = null;
 
 function loadState() {
   try { const s = localStorage.getItem('gz2'); if(s) return JSON.parse(s); } catch(e){}
-  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false, treatmentDates:{}, treatmentStart:{}, doseDays:{}, celexaDose:20, hydroxyzineDose:25};
+  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false, treatmentDates:{}, treatmentStart:{}, doseDays:{}};
 }
 function save() { try { localStorage.setItem('gz2', JSON.stringify(ST)); } catch(e){} }
 
@@ -1589,6 +1589,17 @@ function toggleDark() {
 }
 
 // ─── DRUG GRID ────────────────────────────────────────────────────────────────
+const DRUG_SUBTITLES = {
+  ritalin:     'Stimulant · Bimodal release',
+  concerta:    'Stimulant · OROS ascending',
+  wellbutrin:  'NDRI · Antidepressant',
+  lamictal:    'Mood stabilizer · Na⁺ channel',
+  remeron:     'NaSSA · Sleep + depression',
+  lexapro:     'SSRI · Escitalopram',
+  celexa:      'SSRI · Citalopram',
+  hydroxyzine: 'Antihistamine · Anxiolytic PRN',
+};
+
 function buildGrid() {
   const g = document.getElementById('drugGrid');
   g.innerHTML = '';
@@ -1600,7 +1611,7 @@ function buildGrid() {
     div.onclick = ()=>toggleDrugSel(k);
     div.innerHTML = `<div class="dcheck" id="dck-${k}" style="color:${d.color};border-color:${sel?d.color:'#ccc'}">${sel?'✓':''}</div>
       <div><div class="drug-card-name">${d.name}</div>
-      <div class="drug-card-sub">${k==='ritalin'?'Stimulant · Bimodal':k==='wellbutrin'?'NDRI · Long arc':k==='lamictal'?'Mood stabilizer':k==='concerta'?'Stimulant · OROS ascending':k==='remeron'?'NaSSA · Sleep aid':'SSRI · Serotonin'}</div></div>`;
+      <div class="drug-card-sub">${DRUG_SUBTITLES[k]||''}</div></div>`;
     g.appendChild(div);
   });
 }
@@ -2956,9 +2967,13 @@ function zoneHTML(uid,titleHTML,z,isNow,adapted=false) {
   // Determine if "yours" tab should exist and what the default view is
   // Count logs for this zone — include combo logs (lamictal+lexapro, wellbutrin+remeron)
   // since those are saved under a combo key, not the individual drug key
+  const _currentDoseForZone = getDoseForDrug(activeDrug);
   const logCountForZone = (ST.logs||[]).filter(e=>{
     const matchesDrug = e.drug===activeDrug || e.drug===COMBO_KEY || e.drug===COMBO_KEY_LL;
-    return matchesDrug && e.zone===z.label;
+    if (!matchesDrug || e.zone!==z.label) return false;
+    // Only count logs from the current dose so badge/tab reflect current dose data
+    if (_currentDoseForZone && e.dose != null && e.dose !== _currentDoseForZone) return false;
+    return true;
   }).length;
   const hasYoursData = logCountForZone >= 1; // show tab even at 1, builds toward 3
   const defaultView = logCountForZone >= 2 ? 'yours' : 'research'; // start on yours once there's real data
@@ -3120,7 +3135,7 @@ function openLogModal() {
     modalLight = COMBO_LM_LX.light;
   } else if (v) {
     const [dh,dm] = v.split(':').map(Number), dose=dh+dm/60;
-    const zone = getZone(dose, d.zones);
+    const zone = getZone(dose, getEffectiveZones(activeDrug).zones, ((nowH()-dose)%24+24)%24);
     const elap = ((nowH()-dose)%24+24)%24;
     const mins = Math.round(elap*60);
     const elStr = mins<60?`${mins}m after dose`:`${Math.floor(mins/60)}h ${mins%60}m after dose`;
@@ -3177,13 +3192,16 @@ function closeLogModal(e) {
 }
 
 function getDoseForDrug(drugKey) {
-  if (drugKey === 'wellbutrin') return ST.wellbutrinDose || 300;
-  if (drugKey === 'lamictal')   return ST.lamictalDose   || 50;
-  if (drugKey === 'celexa')     return ST.celexaDose     || 20;
-  if (drugKey === 'hydroxyzine') return ST.hydroxyzineDose || 25;
-  if (drugKey === 'lexapro')    return ST.lexaproDose    || 10;
-  if (drugKey === 'concerta')   return ST.concertaDose   || 27;
-  if (drugKey === 'remeron')    return ST.remeronDose    || 7.5;
+  // Only return a dose if the user has explicitly selected one.
+  // Returning hardcoded defaults would tag every log with a dose the user
+  // never confirmed, corrupting dose comparison and curve separation.
+  if (drugKey === 'wellbutrin') return ST.wellbutrinDose || null;
+  if (drugKey === 'lamictal')   return ST.lamictalDose   || null;
+  if (drugKey === 'celexa')     return ST.celexaDose     || null;
+  if (drugKey === 'hydroxyzine') return ST.hydroxyzineDose || null;
+  if (drugKey === 'lexapro')    return ST.lexaproDose    || null;
+  if (drugKey === 'concerta')   return ST.concertaDose   || null;
+  if (drugKey === 'remeron')    return ST.remeronDose    || null;
   return null;
 }
 
@@ -3405,18 +3423,33 @@ function renderLogStats() {
 
   const avg = logs.reduce((s,e)=>s+e.feel,0)/logs.length;
 
+  // Dose breakdown — show mini per-dose avgs when multiple doses logged
+  const logsWithDose = logs.filter(e => e.dose != null);
+  const doseGroups = {};
+  logsWithDose.forEach(e => { if (!doseGroups[e.dose]) doseGroups[e.dose]=[]; doseGroups[e.dose].push(e.feel); });
+  const doseKeys = Object.keys(doseGroups).map(Number).sort((a,b)=>a-b);
+  const doseBreakdown = doseKeys.length >= 2
+    ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+        ${doseKeys.map(mg => {
+          const vals = doseGroups[mg];
+          const a = (vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(1);
+          return `<div style="padding:2px 9px;border-radius:10px;font-size:0.78em;background:${d.light};border:1px solid ${d.color}60;color:${d.color};">${mg}mg: <strong>${a}</strong> <span style="opacity:0.6;">(${vals.length})</span></div>`;
+        }).join('')}
+      </div>`
+    : '';
+
   renderStreakPanel();
   el.innerHTML = `<div class="card" style="padding:12px 14px;">
     <div style="font-size:0.75em;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">${d.name} · ${logs.length} entr${logs.length===1?'y':'ies'}</div>
-    <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+    <div style="display:flex;gap:16px;margin-bottom:${doseBreakdown?'6':'10'}px;flex-wrap:wrap;">
       <div><div style="font-size:1.6em;font-weight:bold;color:${d.color};">${avg.toFixed(1)}</div><div style="font-size:0.75em;color:#888;">avg feeling</div></div>
       ${topTags.map(([t,c])=>`<div><div style="font-size:1.2em;font-weight:bold;">${c}x</div><div style="font-size:0.75em;color:${TAG_COLORS[t]||'#888'};">${t}</div></div>`).join('')}
     </div>
-    ${Object.keys(byZone).length>1?`<div style="font-size:0.8em;color:#888;margin-bottom:5px;">Avg feel by zone:</div>
+    ${doseBreakdown}
+    ${Object.keys(byZone).length>1?`<div style="font-size:0.8em;color:#888;margin-bottom:5px;margin-top:${doseBreakdown?'8':'0'}px;">Avg feel by zone:</div>
     <div style="display:flex;gap:4px;flex-wrap:wrap;">
       ${Object.entries(byZone).map(([z,vals])=>{
         const a=(vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(1);
-        const w=parseFloat(a)/10;
         return `<div style="padding:3px 8px;border-radius:12px;font-size:0.78em;background:${d.light};border:1px solid ${d.color};color:${d.color};">${z.replace(' ⭐','')}: <strong>${a}</strong></div>`;
       }).join('')}
     </div>`:''}
@@ -3459,16 +3492,22 @@ function getFilteredLogs() {
 function renderInsightsPanel() {
   const wrap = document.getElementById('insightsPanel');
   if (!wrap) return;
+  // All logs for this drug (for dose comparison — intentionally cross-dose)
   const allLogs = (ST.logs||[]).filter(e =>
     e.drug === logDrug || e.drug === COMBO_KEY || e.drug === COMBO_KEY_LL
   ).sort((a,b) => b.id - a.id);
-  if (allLogs.length < 8) { wrap.innerHTML = ''; return; }
+  if (allLogs.length < 6) { wrap.innerHTML = ''; return; } // 6 minimum — dose comp needs 6, others need 8 but checked individually
   const d = getDrugForDisplay(logDrug);
 
+  // Current-dose logs — for tag/timing patterns that should reflect active dose
+  const currentDoseForInsights = getDoseForDrug(logDrug);
+  const currentDoseLogs = currentDoseForInsights
+    ? allLogs.filter(e => e.dose == null || e.dose === currentDoseForInsights)
+    : allLogs;
+
   // ── 1. Tag correlations per zone ──────────────────────────────────────────
-  // Which tags appear most in high-feel vs low-feel entries
-  const highLogs = allLogs.filter(e=>e.feel>=7);
-  const lowLogs  = allLogs.filter(e=>e.feel<=4);
+  const highLogs = currentDoseLogs.filter(e=>e.feel>=7);
+  const lowLogs  = currentDoseLogs.filter(e=>e.feel<=4);
   const highTagCount = {}, lowTagCount = {};
   highLogs.forEach(e=>e.tags&&e.tags.forEach(t=>{highTagCount[t]=(highTagCount[t]||0)+1;}));
   lowLogs.forEach(e=>e.tags&&e.tags.forEach(t=>{lowTagCount[t]=(lowTagCount[t]||0)+1;}));
@@ -3483,7 +3522,7 @@ function renderInsightsPanel() {
 
   // ── 2. Timing patterns — best elapsed hour window ─────────────────────────
   // Split into early/mid/late thirds of the day's coverage and compare avg feel
-  const withElapsed = allLogs.filter(e=>e.elapsedH!=null);
+  const withElapsed = currentDoseLogs.filter(e=>e.elapsedH!=null);
   let timingHTML = '';
   if (withElapsed.length >= 6) {
     // Bucket into 1hr windows, find top 3
@@ -3522,10 +3561,10 @@ function renderInsightsPanel() {
 
   // ── 3. Dose-time patterns ─────────────────────────────────────────────────
   let doseTimeHTML = '';
-  const withDose = allLogs.filter(e=>e.dose_time);
+  const withDose = currentDoseLogs.filter(e=>e.doseTime);
   if (withDose.length >= 6) {
-    const earlyDose = withDose.filter(e=>{ const [h]=e.dose_time.split(':').map(Number); return h<9; });
-    const lateDose  = withDose.filter(e=>{ const [h]=e.dose_time.split(':').map(Number); return h>=9; });
+    const earlyDose = withDose.filter(e=>{ const [h]=e.doseTime.split(':').map(Number); return h<9; });
+    const lateDose  = withDose.filter(e=>{ const [h]=e.doseTime.split(':').map(Number); return h>=9; });
     if (earlyDose.length>=3 && lateDose.length>=3) {
       const earlyAvg = (earlyDose.reduce((s,e)=>s+e.feel,0)/earlyDose.length).toFixed(1);
       const lateAvg  = (lateDose.reduce((s,e)=>s+e.feel,0)/lateDose.length).toFixed(1);
@@ -3568,7 +3607,62 @@ function renderInsightsPanel() {
     </div>`;
   }
 
-  const hasAny = tagHTML || timingHTML || doseTimeHTML;
+  // ── 4. Dose comparison — how do different mg doses compare? ─────────────────
+  let doseCompHTML = '';
+  const logsWithDose = allLogs.filter(e => e.dose != null);
+  if (logsWithDose.length >= 6) {
+    // Group by dose
+    const byDose = {};
+    logsWithDose.forEach(e => {
+      if (!byDose[e.dose]) byDose[e.dose] = [];
+      byDose[e.dose].push(e);
+    });
+    const doseGroups = Object.entries(byDose)
+      .map(([mg, entries]) => ({
+        mg: parseInt(mg),
+        n: entries.length,
+        avg: entries.reduce((s,e)=>s+e.feel,0) / entries.length,
+        topTags: (() => {
+          const tc = {};
+          entries.forEach(e => e.tags.forEach(t => { tc[t]=(tc[t]||0)+1; }));
+          return Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([t])=>t);
+        })()
+      }))
+      .filter(g => g.n >= 3)
+      .sort((a,b) => a.mg - b.mg);
+
+    if (doseGroups.length >= 2) {
+      const best = [...doseGroups].sort((a,b) => b.avg - a.avg)[0];
+      const worst = [...doseGroups].sort((a,b) => a.avg - b.avg)[0];
+      const maxAvg = Math.max(...doseGroups.map(g=>g.avg));
+      doseCompHTML = `<div class="pattern-card" style="border-left:3px solid ${d.color};">
+        <div class="pattern-card-title">Dose comparison</div>
+        ${doseGroups.map(g => {
+          const barW = Math.round((g.avg / 10) * 100);
+          const isBest = g.mg === best.mg && doseGroups.length > 1;
+          const isWorst = g.mg === worst.mg && doseGroups.length > 1 && worst.avg < best.avg - 0.3;
+          return `<div style="margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+              <span style="font-size:0.82em;font-weight:bold;color:${d.color};min-width:42px;">${g.mg}mg</span>
+              <div style="flex:1;background:#f0f0f0;border-radius:4px;height:7px;overflow:hidden;">
+                <div style="width:${barW}%;height:100%;background:${isBest?'#40b060':isWorst?'#e05050':d.color};border-radius:4px;transition:width 0.4s;"></div>
+              </div>
+              <span style="font-size:0.88em;font-weight:bold;color:${feelColor(g.avg,d.color)};">${g.avg.toFixed(1)}</span>
+              <span style="font-size:0.74em;color:#aaa;">${g.n} log${g.n===1?'':'s'}</span>
+              ${isBest ? `<span style="font-size:0.7em;background:#40b06020;color:#2a8040;border-radius:8px;padding:1px 6px;">best</span>` : ''}
+            </div>
+            ${g.topTags.length ? `<div style="font-size:0.74em;color:#aaa;padding-left:50px;">${g.topTags.join(', ')}</div>` : ''}
+          </div>`;
+        }).join('')}
+        ${best.avg - worst.avg >= 0.5
+          ? `<div style="font-size:0.78em;color:#555;margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f0;">You avg <strong style="color:#40b060;">${best.avg.toFixed(1)}</strong> on ${best.mg}mg vs <strong style="color:#e05050;">${worst.avg.toFixed(1)}</strong> on ${worst.mg}mg</div>`
+          : `<div style="font-size:0.78em;color:#aaa;margin-top:4px;padding-top:6px;border-top:1px solid #f0f0f0;">Similar feel across doses so far — keep logging</div>`
+        }
+      </div>`;
+    }
+  }
+
+  const hasAny = tagHTML || timingHTML || doseTimeHTML || doseCompHTML;
   if (!hasAny) { wrap.innerHTML=''; return; }
 
   // Collapsible container
@@ -3580,7 +3674,7 @@ function renderInsightsPanel() {
       <span id="insightsArrow">${isOpen?'▲':'▼'}</span>
     </div>
     <div id="insightsBody" style="display:${isOpen?'block':'none'};">
-      ${tagHTML}${timingHTML}${doseTimeHTML}
+      ${doseCompHTML}${tagHTML}${timingHTML}${doseTimeHTML}
     </div>
   </div>`;
 }
@@ -3976,10 +4070,14 @@ function showMarkDayMenu(dk) {
 function entryHTML(e, d) {
   const feel10 = `<span style="color:${feelColor(e.feel,d.color)};">${e.feel}/10</span>`;
   const elStr = e.elapsedH!=null ? ` · ${e.elapsedH<1?Math.round(e.elapsedH*60)+'m':Math.floor(e.elapsedH)+'h '+Math.round((e.elapsedH%1)*60)+'m'} after dose` : '';
+  // Dose badge — only show for drugs with dose selectors, and only when >1 dose exists in history
+  const doseBadge = e.dose != null
+    ? `<span style="font-size:0.7em;background:${d.color}18;color:${d.color};border:1px solid ${d.color}40;border-radius:8px;padding:1px 6px;margin-left:5px;font-weight:bold;">${e.dose}mg</span>`
+    : '';
   return `<div class="log-entry" style="border-left-color:${feelColor(e.feel,d.color)};" id="entry_${e.id}">
     <div class="log-entry-header">
       <div style="flex:1;">
-        <div class="log-entry-feel">${feel10} ${moodEmoji(e.feel)}</div>
+        <div class="log-entry-feel">${feel10} ${moodEmoji(e.feel)}${doseBadge}</div>
         <div class="log-entry-zone">${to12(e.time)}${elStr}</div>
         <div class="log-entry-zone" style="color:#aaa;">${e.zone.replace(' ⭐','')}</div>
       </div>
@@ -4250,11 +4348,14 @@ function updateAdaptiveNotes() {
 
 function getAdaptiveNote(drugKey, zoneName) {
   // Returns null if <2 logs, otherwise rich structured data for "yours" panel
-  // Include combo logs — when both drugs are active, logs save under combo key
-  // but they're still relevant for this drug's zone experience
+  // Filter to current dose — zone experience differs between doses
+  const currentDose = getDoseForDrug(drugKey);
   const logs = (ST.logs||[]).filter(e=>{
     const matchesDrug = e.drug===drugKey || e.drug===COMBO_KEY || e.drug===COMBO_KEY_LL;
-    return matchesDrug && e.zone===zoneName && e.elapsedH!=null;
+    if (!matchesDrug || e.zone!==zoneName || e.elapsedH==null) return false;
+    // Only include current-dose logs (or undated legacy logs with no dose recorded)
+    if (currentDose && e.dose != null && e.dose !== currentDose) return false;
+    return true;
   });
   if (logs.length < 2) return null;
 
@@ -4285,9 +4386,12 @@ function getAdaptiveNote(drugKey, zoneName) {
 function yoursHTML(drugKey, zoneName, uid) {
   const data = getAdaptiveNote(drugKey, zoneName);
   const d = getDrugForDisplay(drugKey);
+  const currentDose = getDoseForDrug(drugKey);
   const logs = (ST.logs||[]).filter(e=>{
     const matchesDrug = e.drug===drugKey || e.drug===COMBO_KEY || e.drug===COMBO_KEY_LL;
-    return matchesDrug && e.zone===zoneName;
+    if (!matchesDrug || e.zone!==zoneName) return false;
+    if (currentDose && e.dose != null && e.dose !== currentDose) return false;
+    return true;
   });
   const count = data ? data.count : logs.length;
 
@@ -4396,8 +4500,17 @@ const DRUG_MAX_SHIFT = {
 function getPersonalCurve(drugKey) {
   // Include WB+RM combo logs for wellbutrin (they have elapsedH from wellbutrin dose)
   const comboKeyForDrug = drugKey === 'wellbutrin' || drugKey === 'remeron' ? COMBO_KEY : null;
+  // Filter to current dose only — mixing doses corrupts the curve
+  const currentDose = getDoseForDrug(drugKey);
   const logs = (ST.logs||[])
-    .filter(e => (e.drug===drugKey || (comboKeyForDrug && e.drug===comboKeyForDrug)) && e.elapsedH!=null && e.elapsedH >= 0)
+    .filter(e => {
+      const drugMatch = e.drug===drugKey || (comboKeyForDrug && e.drug===comboKeyForDrug);
+      if (!drugMatch || e.elapsedH==null || e.elapsedH < 0) return false;
+      // If this drug uses dose selectors, only include logs from the current dose
+      // (or logs with no dose recorded — legacy entries before dose tracking)
+      if (currentDose && e.dose != null && e.dose !== currentDose) return false;
+      return true;
+    })
     .sort((a,b) => b.id - a.id); // newest first
   if (logs.length < MIN_LOGS_FOR_ADAPT) return null;
 
@@ -4564,7 +4677,13 @@ function resetAdaptive(drugKey) {
 function adaptiveBannerHTML(drugKey) {
   const d = DRUGS[drugKey];
   const comboK = (drugKey==='wellbutrin'||drugKey==='remeron') ? COMBO_KEY : null;
-  const logs = (ST.logs||[]).filter(e=>(e.drug===drugKey||(comboK&&e.drug===comboK)) && e.elapsedH!=null);
+  const currentDose = getDoseForDrug(drugKey);
+  const logs = (ST.logs||[]).filter(e => {
+    const drugMatch = e.drug===drugKey || (comboK && e.drug===comboK);
+    if (!drugMatch || e.elapsedH==null) return false;
+    if (currentDose && e.dose != null && e.dose !== currentDose) return false;
+    return true;
+  });
   if (logs.length === 0) return '';
 
   if (logs.length < MIN_LOGS_FOR_ADAPT) {
@@ -4623,7 +4742,13 @@ function renderCurvePage() {
   // Show curve for all active drugs that have enough data
   const drugsToShow = ST.active.filter(k => {
     const ck = (k==='wellbutrin'||k==='remeron') ? COMBO_KEY : null;
-    const logs = (ST.logs||[]).filter(e=>(e.drug===k||(ck&&e.drug===ck))&&e.elapsedH!=null);
+    const cd = getDoseForDrug(k);
+    const logs = (ST.logs||[]).filter(e => {
+      const dm = e.drug===k || (ck && e.drug===ck);
+      if (!dm || e.elapsedH==null) return false;
+      if (cd && e.dose != null && e.dose !== cd) return false;
+      return true;
+    });
     return logs.length >= 2;
   });
 
@@ -4640,7 +4765,14 @@ function renderCurvePage() {
 function curveCardHTML(drugKey) {
   const d = DRUGS[drugKey];
   const dd = getDrugForDisplay(drugKey);
-  const logs = (ST.logs||[]).filter(e=>(e.drug===drugKey||(drugKey==='wellbutrin'||drugKey==='remeron'?e.drug===COMBO_KEY:false))&&e.elapsedH!=null&&e.elapsedH>=0);
+  const _curveComboK = (drugKey==='wellbutrin'||drugKey==='remeron') ? COMBO_KEY : null;
+  const _curveDose = getDoseForDrug(drugKey);
+  const logs = (ST.logs||[]).filter(e => {
+    const dm = e.drug===drugKey || (_curveComboK && e.drug===_curveComboK);
+    if (!dm || e.elapsedH==null || e.elapsedH<0) return false;
+    if (_curveDose && e.dose != null && e.dose !== _curveDose) return false;
+    return true;
+  });
   const { zones: effectiveZones, adapted, curve } = getEffectiveZones(drugKey);
   const baseZones = drugKey === 'remeron' ? getRemeronZones() : (d.zones || []);
 
@@ -4769,8 +4901,8 @@ function curveCardHTML(drugKey) {
 function exportLog() {
   const logs = ST.logs||[];
   if (!logs.length) { alert('No log entries to export'); return; }
-  const csv = ['date,time,drug,zone,feel,tags,note,elapsed_hrs',
-    ...logs.map(e=>`"${new Date(e.ts).toLocaleDateString()}","${e.time}","${e.drug}","${e.zone}",${e.feel},"${e.tags.join(';')}","${e.note||''}","${e.elapsedH!=null?e.elapsedH.toFixed(2):''}"`)
+  const csv = ['date,time,drug,dose_mg,zone,feel,tags,note,elapsed_hrs',
+    ...logs.map(e=>`"${new Date(e.ts).toLocaleDateString()}","${e.time}","${e.drug}","${e.dose!=null?e.dose:''}","${e.zone}",${e.feel},"${e.tags.join(';')}","${e.note||''}","${e.elapsedH!=null?e.elapsedH.toFixed(2):''}"`)
   ].join('\n');
   const blob = new Blob([csv],{type:'text/csv'});
   const a = document.createElement('a');
