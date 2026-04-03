@@ -274,7 +274,7 @@ body.dark .adaptive-note { color:#bbb; }
 <body>
 
 <div class="nav">
-  <div class="nav-title" onclick="goPage('main')" style="cursor:pointer;>
+  <div class="nav-title" onclick="goPage('main')" style="cursor:pointer;">
     <svg id="pill-icon" width="30" height="17" viewBox="0 0 28 16">
       <rect x="0" y="0" width="28" height="16" rx="8" fill="#c070e8"/>
       <rect x="14" y="0" width="14" height="16" rx="0" fill="#e0a8f8"/>
@@ -1421,9 +1421,9 @@ async function init() {
     goPage('auth');
   }
 
-  // Listen for auth changes
-  supa.auth.onAuthStateChange((_event, session) => {
-    if (session && !currentUser) {
+  // Listen for auth changes — only act on genuine new sign-ins
+  supa.auth.onAuthStateChange((event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && !currentUser) {
       currentUser = session.user;
       launchApp();
     }
@@ -1463,7 +1463,7 @@ function launchApp() {
   buildTabs();
   setDrug(ST.active[0] || 'ritalin');
   startTicker();
-  goPage('main');
+  goPage('main'); // always land on main dashboard, never meds/auth/log
 }
 
 function continueAsGuest() {
