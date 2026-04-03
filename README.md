@@ -1,6 +1,6 @@
 # Grind-Zone
 
-Live Demo: https://your-app-link.com](https://grind-zone-app-355u.vercel.app/
+Live Demo: https://grind-zone-app-355u.vercel.app/
 
 
 Tracks medication timing and models how drug effects evolve throughout the day, with adaptive calibration based on user-reported data.
