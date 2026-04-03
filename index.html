@@ -1400,13 +1400,55 @@ let currentUser = null; // null = guest mode
 let activeDrug = 'ritalin';
 let tickTimer = null;
 
+const STATE_VERSION = 4; // bump when a migration is needed
+
+function migrateState(s) {
+  if (!s) return s;
+  const v = s.stateVersion || 0;
+
+  // v1→v2: ensure treatmentDates, treatmentStart, doseDays exist
+  if (v < 2) {
+    if (!s.treatmentDates) s.treatmentDates = {};
+    if (!s.treatmentStart)  s.treatmentStart  = {};
+    if (!s.doseDays)        s.doseDays        = {};
+  }
+
+  // v2→v3: remove accidental hardcoded dose defaults that were written to storage
+  // (celexaDose:20 / hydroxyzineDose:25 were erroneously seeded in loadState)
+  if (v < 3) {
+    if (s.celexaDose === 20 && !(s.logs||[]).some(e=>e.drug==='celexa'))      delete s.celexaDose;
+    if (s.hydroxyzineDose === 25 && !(s.logs||[]).some(e=>e.drug==='hydroxyzine')) delete s.hydroxyzineDose;
+  }
+
+  // v3→v4: ensure active array only contains valid drug keys
+  if (v < 4) {
+    const valid = new Set(['ritalin','wellbutrin','lamictal','concerta','remeron','lexapro','celexa','hydroxyzine']);
+    s.active = (s.active||[]).filter(k => valid.has(k));
+    if (!s.active.length) s.active = ['ritalin','wellbutrin','lamictal','concerta'];
+    // ensure logs array exists
+    if (!s.logs) s.logs = [];
+  }
+
+  s.stateVersion = STATE_VERSION;
+  return s;
+}
+
 function loadState() {
-  try { const s = localStorage.getItem('gz2'); if(s) return JSON.parse(s); } catch(e){}
-  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false, treatmentDates:{}, treatmentStart:{}, doseDays:{}};
+  try {
+    const raw = localStorage.getItem('gz2');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return migrateState(parsed);
+    }
+  } catch(e) { console.warn('State parse error — using defaults', e); }
+  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false,
+    treatmentDates:{}, treatmentStart:{}, doseDays:{}, logs:[], stateVersion: STATE_VERSION};
 }
 function save() { try { localStorage.setItem('gz2', JSON.stringify(ST)); } catch(e){} }
 
 let ST = loadState();
+// Persist any migrations immediately so they don't re-run on next load
+try { localStorage.setItem('gz2', JSON.stringify(ST)); } catch(e){}
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 async function init() {
