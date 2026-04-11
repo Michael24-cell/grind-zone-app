@@ -2366,9 +2366,14 @@ function renderNow() {
     const elap = ((now-dose)%24+24)%24, mins = Math.round(elap*60);
     const elStr = mins<60?`${mins}m ago`:`${Math.floor(mins/60)}h ${mins%60}m ago`;
     const bg = nowCardBg(z, d);
+    const dsNow = getDecisionSupport(k, z.label, false);
     html += `<div style="${bg}border-radius:7px;padding:10px 13px;border:1px solid;cursor:pointer;" onclick="setDrug('${k}')">
       <div style="font-weight:bold;font-size:1.05em;">${d.name} · ${z.label}</div>
       <div style="font-size:0.88em;color:#555;margin-top:2px;">Dosed ${elStr}${z.power!=='—'?' · '+z.power:''}</div>
+      ${dsNow ? `<div style="margin-top:7px;padding:5px 8px;background:rgba(0,0,0,0.06);border-radius:5px;border-left:3px solid ${d.color};">
+        <div style="font-size:0.78em;font-weight:bold;color:#333;">▶ ${dsNow.action}</div>
+        ${dsNow.sub ? `<div style="font-size:0.73em;color:#666;margin-top:1px;">${dsNow.sub}</div>` : ''}
+      </div>` : ''}
     </div>`;
   } else {
     // Multiple drugs — render side by side grid if 2, stacked with compact rows if 3-4
@@ -2377,18 +2382,21 @@ function renderNow() {
     dosed.forEach(k => {
       const d = DRUGS[k];
       const [hh,mm] = ST.doses[k].split(':').map(Number), dose = hh+mm/60;
-      const z = getZone(dose, d.zones);
+      const {zones: effZ2} = getEffectiveZones(k);
+      const z = getZone(dose, effZ2);
       const elap = ((now-dose)%24+24)%24, mins = Math.round(elap*60);
       const elStr = mins<60?`${mins}m ago`:`${Math.floor(mins/60)}h ${mins%60}m ago`;
       const bg = nowCardBg(z, d);
+      const dsMulti = getDecisionSupport(k, z.label, false);
       // Mini power bar
       const powerNum = z.power !== '—' ? parseFloat(z.power.split('/')[0].split('–')[1] || z.power.split('/')[0]) : null;
       const barW = powerNum ? Math.round((powerNum/10)*100) : 0;
       html += `<div style="${bg}border-radius:7px;padding:9px 11px;border:1px solid;cursor:pointer;min-width:0;" onclick="setDrug('${k}')">
         <div style="font-size:0.72em;color:#888;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.name}</div>
-        <div style="font-weight:bold;font-size:0.95em;line-height:1.3;margin-bottom:3px;">${z.label.replace(' ⭐','')}</div>
+        <div style="font-weight:bold;font-size:0.95em;line-height:1.3;margin-bottom:3px;">${z.label.replace(' ⭐','').replace(' ⭐','')}</div>
         ${powerNum ? `<div style="height:4px;background:rgba(0,0,0,0.1);border-radius:2px;margin-bottom:3px;"><div style="height:100%;width:${barW}%;background:${d.color};border-radius:2px;transition:width 0.4s;"></div></div>` : ''}
         <div style="font-size:0.78em;color:#666;">${elStr}${z.power!=='—'?' · '+z.power:''}</div>
+        ${dsMulti ? `<div style="margin-top:5px;font-size:0.74em;font-weight:bold;color:#444;padding:3px 6px;background:rgba(0,0,0,0.06);border-radius:4px;">▶ ${dsMulti.action}</div>` : ''}
       </div>`;
     });
     html += '</div>';
@@ -3002,6 +3010,101 @@ function renderZones() {
   out.innerHTML=h;
 }
 
+
+// ─── DECISION SUPPORT ─────────────────────────────────────────────────────────
+// Per-drug, per-zone: what should you actually do right now?
+// Only shown on the current zone (isNow). Null = skip for that zone.
+// Format: { action: one-line directive, sub: optional context }
+const DECISION_SUPPORT = {
+  ritalin: {
+    'Onset':           { action: 'Get set up now — peak hits in ~30min', sub: 'Prepare your workspace, queue your tasks, close distractions' },
+    'First Peak ⭐':   { action: 'Do your hardest cognitive work now', sub: 'Deep focus, complex decisions, creative work — your best window' },
+    'Trough':          { action: 'Light tasks only — second peak incoming', sub: 'Admin, email, simple errands — save complex work for next peak' },
+    'Second Peak ⭐':  { action: 'Second wind — good for sustained focus', sub: 'Longer-form work, reading, structured tasks' },
+    'Plateau':         { action: 'Winding down — wrap up or delegate', sub: 'Finish what you started, avoid starting complex new tasks' },
+    'Taper':           { action: 'Effects fading — low-stakes tasks', sub: 'Schedule, plan tomorrow, wind down work' },
+    'Baseline':        { action: 'Back to baseline — rest or light activity', sub: null },
+  },
+  concerta: {
+    'IR Overcoat':     { action: 'Mild start — ease in, don\'t force it', sub: 'Light tasks while the full curve builds over the next few hours' },
+    'Building':        { action: 'Building toward peak — prepare your work queue', sub: 'Organize tasks now so you\'re ready when full effect hits' },
+    'Ascending':       { action: 'Climbing toward peak — start focused work', sub: 'Good for structured tasks, reading, building momentum' },
+    'Ascending Peak':  { action: 'Near peak — start your most important work', sub: 'Focus arriving — best window is just ahead' },
+    'True Peak ⭐':    { action: 'Peak — your best cognitive window of the day', sub: 'Complex decisions, deep work, creative output — use this window' },
+    'Plateau':         { action: 'Sustained focus — stay in your work', sub: 'Good for long-form tasks that need steady attention' },
+    'Taper':           { action: 'Tapering — start wrapping up demanding work', sub: 'Shift to lighter tasks, meetings, admin' },
+    'Baseline':        { action: 'Back to baseline — rest up for tomorrow', sub: null },
+  },
+  wellbutrin: {
+    'Absorbing':       { action: 'Activating — give it time', sub: 'NE/DA building — good for light morning tasks while it comes on' },
+    'Building':        { action: 'Motivation and drive building', sub: 'Good window for getting started on things you\'ve been avoiding' },
+    'Peak Zone ⭐':    { action: 'Peak activation — best window for motivated work', sub: 'Drive and focus at their highest — use this for goals that require push' },
+    'Active Plateau':  { action: 'Sustained activation — stay productive', sub: 'Good for long work blocks, executive tasks, planning' },
+    'Pre-Dose Trough': { action: 'Activation fading — wind down', sub: 'Light tasks, review work, prepare for tomorrow' },
+    'Taper':           { action: 'Taper phase — lighter work', sub: null },
+  },
+  lamictal: {
+    'Absorbing':         { action: 'Mood floor holding — work as normal', sub: 'Lamictal has no daily peak — consistent coverage throughout the day' },
+    'Peak Blood Level':  { action: 'Plasma at peak — no change in function', sub: 'This drug works over weeks, not hours — today is the same as yesterday' },
+    'Active Stabilization': { action: 'Stable coverage — consistent baseline', sub: null },
+    'Sustained Coverage': { action: 'Mood floor stable', sub: null },
+    'Trough / Next Dose': { action: 'Take next dose at your usual time', sub: 'Consistency matters more than timing for lamictal' },
+    'Next Dose Due':      { action: 'Take your dose — same time daily', sub: null },
+  },
+  remeron: {
+    'Onset':              { action: 'Sedation incoming — get to bed', sub: 'Remeron onset is fast. Lying down now gives the best sleep quality' },
+    'Peak Sedation ⭐':   { action: 'Deepest sedation — stay in bed', sub: 'Do not try to fight this. This window is for sleep, not tasks' },
+    'Deep Sleep Window':  { action: 'Deep sleep active — stay asleep', sub: null },
+    'Residual Sedation':  { action: 'Still clearing — avoid important decisions', sub: 'Cognition impaired. Coffee, movement, and time before any complex work' },
+    'Clearing':           { action: 'Clearing — light tasks as you wake up', sub: 'Mental fog lifting. Avoid committing to important calls until fully alert' },
+    'Baseline / Pre-dose': { action: 'Baseline — normal function until tonight\'s dose', sub: 'Schedule demanding work in this window, before tonight\'s dose' },
+  },
+  lexapro: {
+    'Absorbing':              { action: 'Plasma absorbing — no acute effect today', sub: 'Lexapro works over weeks. Today\'s dose adds to the cumulative foundation' },
+    'Peak Plasma ⭐':         { action: 'Plasma peak — still no acute cognitive effect', sub: 'This peak is pharmacokinetic, not experiential. Work normally' },
+    'Active Coverage':        { action: 'SERT occupied — steady coverage', sub: null },
+    'Sustained Serotonin Floor': { action: 'Consistent coverage — no daily cliff', sub: null },
+    'Pre-Dose Trough':        { action: 'Take next dose at your usual time', sub: 'Long half-life means minimal change between doses' },
+    'Next Dose Due':          { action: 'Take your dose — same time daily', sub: null },
+  },
+  celexa: {
+    'Absorbing':         { action: 'Plasma absorbing — no acute effect today', sub: 'Celexa works over weeks. Today\'s dose adds to the cumulative foundation' },
+    'Peak Plasma ⭐':    { action: 'Plasma peak — no acute cognitive effect', sub: 'This peak is pharmacokinetic, not experiential. Work normally' },
+    'Active Coverage':   { action: 'SERT occupied — steady coverage throughout the day', sub: null },
+    'Sustained Coverage': { action: 'Consistent plasma — no daily cliff', sub: null },
+    'Pre-Dose Trough':   { action: 'Take next dose at your usual time', sub: null },
+    'Next Dose Due':     { action: 'Take your dose — same time daily', sub: null },
+  },
+  hydroxyzine: {
+    'Onset':            { action: 'Anxiolytic activating — anxiety will ease shortly', sub: 'Effects in 15–30min. Good time to prepare for whatever was stressing you' },
+    'Building Relief ⭐': { action: 'Anxiety dampening — good window for hard conversations', sub: 'Use this window for calls, tasks, or situations you\'ve been avoiding' },
+    'Peak Effect ⭐':   { action: 'Peak anxiolysis — tackle what was overwhelming you', sub: 'Physiological anxiety (HR, tension) reduced. Cognitive load feels lighter' },
+    'Active Relief':    { action: 'Still effective — stay in your task', sub: 'Effects declining but still meaningful for another hour or two' },
+    'Winding Down':     { action: 'Anxiolytic fading — wrap up demanding social/emotional work', sub: null },
+    'Cleared':          { action: 'Effects resolved — assess how you feel naturally', sub: null },
+  },
+  // Combo phases — keyed by net label
+  'Alerting + mood lift':              { action: 'Energy coming online — start your day\'s most important tasks', sub: 'NE elevated from two mechanisms. Use this activation productively' },
+  'Full activation + stable baseline': { action: 'Peak combo window — this is your best work time', sub: 'Bupropion at full effect, remeron\'s mood floor stable. Do your hardest work now' },
+  'Steady state — prep for sleep':     { action: 'Wind down — take Remeron 30–60min before bed', sub: 'Avoid stimulating content, screens, or starting new demanding tasks' },
+  'Deep repair sleep':                 { action: 'Sleep — do not fight this window', sub: 'Remeron is doing restoration work. Stay asleep' },
+  'Building foundation':               { action: 'Early days — consistency is your only task', sub: 'Take both meds at their scheduled times. Effects accumulate below the surface' },
+  'Full combination effect':           { action: 'Full combination active — stable daily function', sub: null },
+  'Maintenance — consistency is everything': { action: 'Maintain — same time, every day', sub: null },
+};
+
+function getDecisionSupport(drugKey, zoneLabel, isCombo) {
+  if (isCombo) {
+    // For combo phases, look up by the net label directly
+    return DECISION_SUPPORT[zoneLabel] || null;
+  }
+  const drugMap = DECISION_SUPPORT[drugKey];
+  if (!drugMap) return null;
+  // Strip star emoji variants for lookup
+  const cleanLabel = zoneLabel.replace(' ⭐', '').replace(' \u2b50', '').trim();
+  return drugMap[zoneLabel] || drugMap[cleanLabel] || null;
+}
+
 function zoneHTML(uid,titleHTML,z,isNow,adapted=false) {
   const nowStyle=isNow?'box-shadow:0 0 0 2px rgba(0,0,0,0.18);border-radius:7px;':'';
   const nowHdrExtra=isNow?'border-left-width:5px !important;':'';
@@ -3037,6 +3140,16 @@ function zoneHTML(uid,titleHTML,z,isNow,adapted=false) {
         <div class="zone-title">${titleHTML}</div>
         ${z.power!=='—'?`<div class="zone-sub">Effect level: ${z.power}</div>`:''}
         ${isNow?`<div class="you-are-here">← you are here</div>`:''}
+        ${(() => {
+          if (!isNow) return '';
+          const isComboZone = activeDrug === COMBO_KEY || activeDrug === COMBO_KEY_LL;
+          const ds = getDecisionSupport(activeDrug, z.label, isComboZone);
+          if (!ds) return '';
+          return `<div style="margin-top:6px;padding:6px 9px;background:rgba(0,0,0,0.06);border-radius:6px;border-left:3px solid currentColor;">
+            <div style="font-size:0.76em;font-weight:bold;letter-spacing:0.02em;">▶ ${ds.action}</div>
+            ${ds.sub ? `<div style="font-size:0.72em;opacity:0.75;margin-top:2px;">${ds.sub}</div>` : ''}
+          </div>`;
+        })()}
         ${adapted&&z.peak?`<div style="font-size:0.72em;color:#c070e8;margin-top:2px;">👤 calibrated to your data</div>`:''}
         ${hasYoursData&&!isNow?`<div style="font-size:0.7em;color:#c070e8;margin-top:1px;">👤 ${logCountForZone} log${logCountForZone===1?'':'s'}</div>`:''}
       </div>
