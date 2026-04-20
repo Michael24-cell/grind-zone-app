@@ -36,6 +36,13 @@ body.dark .readme-body p, body.dark .readme-body li { color: #bbb; }
 body.dark .share-url { background: #2a2a2a; border-color: #555; color: #ccc; }
 body.dark .zone-sub { color: #999 !important; }
 body.dark #nowBanner { color: #e0e0e0; }
+body.dark .disclaimer-text { color: #666; }
+body.dark #signInPill { color: #d09af0; border-color: #9050c0; background: #2a1a3a; }
+body.dark #signInPill:hover { background: #321e44; }
+body.dark #page-onboarding .drug-card { background: #252525; border-color: #444; }
+body.dark #page-onboarding input[type=date] { background: #2a2a2a; color: #e0e0e0; border-color: #555; }
+body.dark .ob-skip-btn { color: #666; border-color: #444; }
+body.dark .ob-hint { color: #555; }
 
 .content { max-width: 640px; margin: 0 auto; padding: 14px 16px; }
 .card { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
@@ -192,6 +199,7 @@ body.dark .tl-now { background: #ccc; }
 .auth-wrap { max-width: 380px; margin: 60px auto; padding: 0 20px; text-align: center; }
 .auth-wrap h2 { margin: 0 0 8px 0; font-size: 1.3em; }
 .auth-wrap p { color: #888; font-size: 0.9em; margin: 0 0 24px 0; }
+.disclaimer-text { font-size: 0.75em; color: #aaa; text-align: center; margin-top: 16px; font-family: monospace; }
 .auth-input { width: 100%; padding: 11px 14px; font-size: 1em; font-family: monospace; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; }
 .auth-btn { width: 100%; padding: 12px; font-size: 1em; font-family: monospace; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: #c070e8; color: white; transition: opacity 0.15s; }
 .auth-btn:hover { opacity: 0.88; }
@@ -203,6 +211,8 @@ input[type=number] { -moz-appearance: textfield; }
 .auth-divider { color: #ccc; margin: 16px 0; font-size: 0.85em; }
 .user-pill { font-size: 0.78em; color: #888; background: #f5f5f5; border: 1px solid #eee; border-radius: 20px; padding: 3px 10px; cursor: pointer; }
 .user-pill:hover { background: #eee; }
+#signInPill { color: #7a1fa0; border-color: #c070e8; background: #fdeeff; }
+#signInPill:hover { background: #f5d5ff; }
 
 /* LOG SYSTEM */
 .log-btn { width:100%; padding:11px; border:none; border-radius:8px; cursor:pointer; font-family:monospace; font-size:1em; font-weight:bold; margin-bottom:12px; transition:opacity 0.15s; }
@@ -262,6 +272,33 @@ body.dark .log-entry-note { color:#aaa; }
 .reset-adaptive:hover { color:#e05050; }
 
 body.dark .adaptive-note { color:#bbb; }
+
+/* ── Settings account section ───────────────────────────────────────── */
+.settings-account { border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; }
+.settings-account-email { font-size: 0.9em; color: #444; margin-bottom: 10px; word-break: break-all; }
+.settings-account-email strong { color: #222; }
+.settings-account-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.settings-account-btns .nav-btn { border-color: #ccc; }
+.settings-signout-btn { color: #7a1fa0; border-color: #c070e8; }
+.settings-signout-btn:hover { background: #fdeeff; }
+.settings-delete-btn { color: #c0392b; border-color: #e07070; }
+.settings-delete-btn:hover { background: #fff0f0; }
+.settings-delete-confirm { margin-top: 12px; padding: 12px; background: #fff5f5; border: 1px solid #e07070; border-radius: 8px; }
+.settings-delete-confirm p { font-size: 0.88em; color: #c0392b; margin: 0 0 8px 0; }
+.settings-delete-confirm input { font-family: monospace; font-size: 0.9em; padding: 5px 9px; border: 1px solid #e07070; border-radius: 5px; width: 100%; margin-bottom: 8px; background: white; color: #333; }
+.settings-delete-confirm-btns { display: flex; gap: 8px; }
+.settings-guest-msg { font-size: 0.88em; color: #666; margin-bottom: 10px; }
+body.dark .settings-account { border-color: #333; background: #252525; }
+body.dark .settings-account-email { color: #bbb; }
+body.dark .settings-account-email strong { color: #e0e0e0; }
+body.dark .settings-signout-btn { color: #d09af0; border-color: #9050c0; }
+body.dark .settings-signout-btn:hover { background: #2a1a3a; }
+body.dark .settings-delete-btn { color: #e07070; border-color: #a03030; }
+body.dark .settings-delete-btn:hover { background: #2a1010; }
+body.dark .settings-delete-confirm { background: #2a1010; border-color: #a03030; }
+body.dark .settings-delete-confirm p { color: #e07070; }
+body.dark .settings-delete-confirm input { background: #1e1e1e; color: #e0e0e0; border-color: #a03030; }
+body.dark .settings-guest-msg { color: #888; }
 </style>
 </head>
 <body>
@@ -286,9 +323,10 @@ body.dark .adaptive-note { color:#bbb; }
   <div style="display:flex;gap:6px;">
     <button class="nav-btn" onclick="togglePage('log')">📓 Log</button>
     <button class="nav-btn" onclick="togglePage('drugs')">⚙ Meds</button>
-    <button class="nav-btn" onclick="togglePage('readme')">ℹ</button>
+    <button class="nav-btn" onclick="togglePage('readme')">⚙</button>
     <button class="nav-btn" onclick="toggleDark()" id="darkBtn">🌙</button>
     <span class="user-pill" id="userPill" style="display:none;" onclick="handleSignOut()">···</span>
+    <span class="user-pill" id="signInPill" style="display:none;" onclick="goPage('auth')">Sign in</span>
   </div>
 </div>
 
@@ -439,6 +477,7 @@ body.dark .adaptive-note { color:#bbb; }
         <span style="color:#c070e8;cursor:pointer;" onclick="resendCode()">Resend code</span>
       </div>
     </div>
+    <p class="disclaimer-text">Grind-Zone is not medical advice. For emergencies, call 988 or contact your doctor.</p>
   </div>
 </div>
 
@@ -452,6 +491,44 @@ body.dark .adaptive-note { color:#bbb; }
   <p style="color:#888;font-size:0.88em;margin:0 0 10px 0;">Choose which medications to show on your dashboard.</p>
   <div class="drug-grid" id="drugGrid"></div>
   <button class="nav-btn" style="width:100%;margin-top:10px;padding:11px;" onclick="goPage('main')">Done</button>
+</div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="page" id="page-onboarding">
+<div class="content" style="max-width:480px;">
+
+  <!-- Screen 1: Drug picker -->
+  <div id="ob-screen-1">
+    <div style="margin-bottom:16px;">
+      <div style="font-size:0.75em;color:#aaa;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Step 1 of 2</div>
+      <h2 style="margin:0 0 8px 0;font-size:1.3em;">Which medications do you take?</h2>
+      <p style="color:#888;font-size:0.88em;margin:0 0 4px 0;">Select all that apply.</p>
+    </div>
+    <div class="drug-grid" id="obDrugGrid"></div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
+      <button class="nav-btn" style="width:100%;padding:11px;font-size:1em;" onclick="obNext()">Next →</button>
+      <button class="nav-btn ob-skip-btn" style="width:100%;padding:8px;color:#aaa;border-color:#ddd;" onclick="finishOnboarding()">Skip</button>
+      <p class="ob-hint" style="text-align:center;font-size:0.78em;color:#bbb;margin:2px 0 0 0;">You can change your meds anytime in the Meds tab.</p>
+    </div>
+  </div>
+
+  <!-- Screen 2: Treatment start dates (only shown for slow-build drugs) -->
+  <div id="ob-screen-2" style="display:none;">
+    <div style="margin-bottom:16px;">
+      <div style="font-size:0.75em;color:#aaa;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Step 2 of 2</div>
+      <h2 style="margin:0 0 8px 0;font-size:1.3em;">When did you start?</h2>
+      <p style="color:#888;font-size:0.88em;margin:0;">These medications take weeks to reach full effect. Your start date lets the app show where you are in treatment.</p>
+    </div>
+    <div id="obStartDates"></div>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
+      <button class="nav-btn" style="width:100%;padding:11px;font-size:1em;" onclick="finishOnboarding()">Done ✓</button>
+      <button class="nav-btn ob-skip-btn" style="width:100%;padding:8px;color:#aaa;border-color:#ddd;" onclick="obBack()">← Back</button>
+      <button class="nav-btn ob-skip-btn" style="width:100%;padding:8px;color:#aaa;border-color:#ddd;" onclick="finishOnboarding()">Skip</button>
+      <p class="ob-hint" style="text-align:center;font-size:0.78em;color:#bbb;margin:2px 0 0 0;">You can change your meds anytime in the Meds tab.</p>
+    </div>
+  </div>
+
 </div>
 </div>
 
@@ -469,10 +546,12 @@ body.dark .adaptive-note { color:#bbb; }
 <div class="page" id="page-readme">
 <div class="content">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-    <h2 style="margin:0;font-size:1.2em;">About</h2>
+    <h2 style="margin:0;font-size:1.2em;">Settings</h2>
     <button class="nav-btn back-btn" onclick="goPage('main')">← Back</button>
   </div>
   <div class="readme-body">
+
+    <div id="settingsAccountSection"></div>
 
     <h3>What is this?</h3>
     <p>Grind-Zone is a medication timing and mood tracking tool built around real pharmacokinetic data. Enter when you took your pill — see exactly what zone you're in, when your peak hits, and when things wind down. Log how you feel throughout the day and the app slowly learns your personal timing.</p>
@@ -519,6 +598,7 @@ body.dark .adaptive-note { color:#bbb; }
     <button class="copy-btn" onclick="copyShare()">Copy link</button>
     <div id="copyConfirm" style="font-size:0.83em;color:green;margin-top:4px;display:none;">✓ Copied!</div>
 
+    <p class="disclaimer-text">Grind-Zone is not medical advice. For emergencies, call 988 or contact your doctor.</p>
   </div>
 </div>
 </div>
@@ -1039,7 +1119,12 @@ function launchApp() {
   buildTabs();
   setDrug(ST.active[0] || 'ritalin');
   startTicker();
-  goPage('main');
+  if (!localStorage.getItem('hasSeenOnboarding') && ST.active.length === 0) {
+    buildOnboardingGrid();
+    goPage('onboarding');
+  } else {
+    goPage('main');
+  }
 }
 
 function continueAsGuest() {
@@ -1049,13 +1134,17 @@ function continueAsGuest() {
 
 function updateUserPill() {
   const pill = document.getElementById('userPill');
-  if (!pill) return;
+  const signInPill = document.getElementById('signInPill');
   if (currentUser) {
-    pill.style.display = 'inline-block';
-    const email = currentUser.email || '';
-    pill.textContent = email.length > 18 ? email.slice(0,15)+'…' : email;
+    if (pill) {
+      pill.style.display = 'inline-block';
+      const email = currentUser.email || '';
+      pill.textContent = email.length > 18 ? email.slice(0,15)+'…' : email;
+    }
+    if (signInPill) signInPill.style.display = 'none';
   } else {
-    pill.style.display = 'none';
+    if (pill) pill.style.display = 'none';
+    if (signInPill) signInPill.style.display = 'inline-block';
   }
 }
 
@@ -1067,6 +1156,76 @@ async function handleSignOut() {
   save();
   updateUserPill();
   goPage('auth');
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function renderSettingsAccount() {
+  const el = document.getElementById('settingsAccountSection');
+  if (!el) return;
+
+  if (currentUser) {
+    el.innerHTML = `
+      <div class="settings-account">
+        <div class="settings-account-email">Signed in as <strong>${currentUser.email || '(no email)'}</strong></div>
+        <div class="settings-account-btns">
+          <button class="nav-btn settings-signout-btn" onclick="handleSignOut()">Sign out</button>
+          <button class="nav-btn settings-delete-btn" onclick="showDeleteConfirm()">Delete account</button>
+        </div>
+        <div id="settingsDeleteConfirm" style="display:none;" class="settings-delete-confirm">
+          <p>This will permanently delete all your logs and sign you out. Type <strong>DELETE</strong> to confirm.</p>
+          <input type="text" id="settingsDeleteInput" placeholder="Type DELETE" autocomplete="off" oninput="updateDeleteBtn()">
+          <div class="settings-delete-confirm-btns">
+            <button class="nav-btn settings-delete-btn" id="settingsDeleteConfirmBtn" disabled onclick="confirmDeleteAccount()">Delete my account</button>
+            <button class="nav-btn" onclick="hideDeleteConfirm()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div class="settings-account">
+        <div class="settings-guest-msg">You're in guest mode — logs are stored locally only and won't sync across devices.</div>
+        <button class="nav-btn" onclick="goPage('auth')">Sign in</button>
+      </div>`;
+  }
+}
+
+function showDeleteConfirm() {
+  const box = document.getElementById('settingsDeleteConfirm');
+  const input = document.getElementById('settingsDeleteInput');
+  if (!box) return;
+  box.style.display = 'block';
+  if (input) { input.value = ''; input.focus(); }
+  updateDeleteBtn();
+}
+
+function hideDeleteConfirm() {
+  const box = document.getElementById('settingsDeleteConfirm');
+  if (box) box.style.display = 'none';
+}
+
+function updateDeleteBtn() {
+  const input = document.getElementById('settingsDeleteInput');
+  const btn = document.getElementById('settingsDeleteConfirmBtn');
+  if (!input || !btn) return;
+  btn.disabled = input.value.trim() !== 'DELETE';
+}
+
+async function confirmDeleteAccount() {
+  const btn = document.getElementById('settingsDeleteConfirmBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+  try {
+    if (currentUser) {
+      await supa.from('logs').delete().eq('user_id', currentUser.id);
+      await supa.auth.updateUser({ data: { deleted: true } });
+    }
+    await supa.auth.signOut();
+    localStorage.clear();
+    location.reload();
+  } catch (e) {
+    const btn2 = document.getElementById('settingsDeleteConfirmBtn');
+    if (btn2) { btn2.disabled = false; btn2.textContent = 'Delete my account'; }
+    alert('Something went wrong: ' + (e.message || e));
+  }
 }
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
@@ -1138,7 +1297,7 @@ function backToEmail() {
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  if(id==='readme') genShareUrl();
+  if(id==='readme') { genShareUrl(); renderSettingsAccount(); }
   if(id==='curve') renderCurvePage();
   if(id==='log') { logDrug=activeDrug; calSelectedDate=null; buildLogTabs(); renderLogStats(); renderLogList(); fetchLogsFromSupabase(); updateLogPageBtn(); }
   if(id==='main') {
@@ -1162,6 +1321,93 @@ function toggleDark() {
   document.body.classList.toggle('dark', ST.dark);
   document.getElementById('darkBtn').textContent = ST.dark ? '☀️' : '🌙';
   save();
+}
+
+// ─── ONBOARDING ───────────────────────────────────────────────────────────────
+const SLOW_BUILD_DRUGS = ['lexapro', 'lamictal'];
+
+let obSelectedDrugs = [];
+
+function buildOnboardingGrid() {
+  obSelectedDrugs = ST.active.length ? [...ST.active] : [];
+  const g = document.getElementById('obDrugGrid');
+  g.innerHTML = '';
+  ALL.forEach(k => {
+    const d = DRUGS[k], sel = obSelectedDrugs.includes(k);
+    const div = document.createElement('div');
+    div.className = `drug-card ${d.cls}${sel ? ' sel' : ''}`;
+    div.id = 'obdc-' + k;
+    div.onclick = () => toggleObDrug(k);
+    div.innerHTML = `<div class="dcheck" id="obdck-${k}" style="color:${d.color};border-color:${sel ? d.color : '#ccc'}">${sel ? '✓' : ''}</div>
+      <div><div class="drug-card-name">${d.name}</div>
+      <div class="drug-card-sub">${k==='ritalin'?'Stimulant · Bimodal':k==='wellbutrin'?'NDRI · Long arc':k==='lamictal'?'Mood stabilizer':k==='concerta'?'Stimulant · OROS ascending':k==='remeron'?'NaSSA · Sleep aid':'SSRI · Serotonin'}</div></div>`;
+    g.appendChild(div);
+  });
+}
+
+function toggleObDrug(k) {
+  const idx = obSelectedDrugs.indexOf(k);
+  if (idx >= 0) { obSelectedDrugs.splice(idx, 1); }
+  else { obSelectedDrugs.push(k); }
+  const d = DRUGS[k], sel = obSelectedDrugs.includes(k);
+  const div = document.getElementById('obdc-' + k);
+  div.className = `drug-card ${d.cls}${sel ? ' sel' : ''}`;
+  const chk = document.getElementById('obdck-' + k);
+  chk.style.color = d.color;
+  chk.style.borderColor = sel ? d.color : '#ccc';
+  chk.textContent = sel ? '✓' : '';
+}
+
+function buildObStartDates() {
+  const slowSelected = obSelectedDrugs.filter(k => SLOW_BUILD_DRUGS.includes(k));
+  const container = document.getElementById('obStartDates');
+  container.innerHTML = '';
+  slowSelected.forEach(k => {
+    const d = DRUGS[k];
+    const saved = (ST.doseStartDates || {})[k] || '';
+    const row = document.createElement('div');
+    row.style.cssText = 'margin-bottom:14px;';
+    row.innerHTML = `<label style="display:block;font-size:0.85em;font-weight:bold;margin-bottom:6px;color:${d.color};">${d.name}</label>
+      <input type="date" id="obsd-${k}" value="${saved}"
+        style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-family:monospace;font-size:0.9em;"
+        onchange="obSaveStartDate('${k}', this.value)">`;
+    container.appendChild(row);
+  });
+}
+
+function obSaveStartDate(k, val) {
+  if (!ST.doseStartDates) ST.doseStartDates = {};
+  ST.doseStartDates[k] = val;
+  save();
+}
+
+function obNext() {
+  if (obSelectedDrugs.length > 0) {
+    ST.active = [...obSelectedDrugs];
+    save();
+  }
+  const hasSlowBuild = obSelectedDrugs.some(k => SLOW_BUILD_DRUGS.includes(k));
+  if (hasSlowBuild) {
+    buildObStartDates();
+    document.getElementById('ob-screen-1').style.display = 'none';
+    document.getElementById('ob-screen-2').style.display = '';
+  } else {
+    finishOnboarding();
+  }
+}
+
+function obBack() {
+  document.getElementById('ob-screen-2').style.display = 'none';
+  document.getElementById('ob-screen-1').style.display = '';
+}
+
+function finishOnboarding() {
+  if (obSelectedDrugs.length > 0) {
+    ST.active = [...obSelectedDrugs];
+    save();
+  }
+  localStorage.setItem('hasSeenOnboarding', 'true');
+  goPage('main');
 }
 
 // ─── DRUG GRID ────────────────────────────────────────────────────────────────
@@ -2082,7 +2328,7 @@ function toggleZ(uid) {
 // Tags organized by group — used for modal rendering and stats
 const TAG_GROUPS = [
   { label: 'Mood',     tags: ['calm','content','grounded','steady','baseline','motivated','euphoric','moody','irritable','emotional','low','flat','blunted'] },
-  { label: 'Mental',   tags: ['focused','productive','clear','creative','scattered','overthinking','spacy','foggy'] },
+  { label: 'Mental',   tags: ['focused','productive','clear','creative','scattered','overthinking','spacy','foggy','distracted'] },
   { label: 'Energy',   tags: ['energized','tired','tense','restless','wired','crashed','headache','dry mouth','suppressed appetite','nauseous'] },
   { label: 'Social',   tags: ['talkative','social battery low','withdrawn'] },
 ];
@@ -2095,7 +2341,7 @@ const TAG_COLORS = {
   emotional:'#d06080', low:'#7090c0', flat:'#aaa', blunted:'#9090b0',
   // Mental
   focused:'#c070e8', productive:'#7050d0', clear:'#5577d4', creative:'#a040c0',
-  scattered:'#a080c0', overthinking:'#8060c0', spacy:'#90a0c0', foggy:'#aaa',
+  scattered:'#a080c0', overthinking:'#8060c0', spacy:'#90a0c0', foggy:'#aaa', distracted:'#b07090',
   // Energy
   energized:'#f0a000', tired:'#a0a0a0', tense:'#c06030', restless:'#e07030',
   wired:'#e0c000', crashed:'#e05050', headache:'#c04040',
