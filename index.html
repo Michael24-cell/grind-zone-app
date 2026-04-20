@@ -1071,7 +1071,7 @@ let tickTimer = null;
 
 function loadState() {
   try { const s = localStorage.getItem('gz2'); if(s) return JSON.parse(s); } catch(e){}
-  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false};
+  return {doses:{}, active:[], dark:false};
 }
 function save() { try { localStorage.setItem('gz2', JSON.stringify(ST)); } catch(e){} }
 
