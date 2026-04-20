@@ -2605,6 +2605,7 @@ function buildLogTabs() {
     b.onclick = () => { logDrug=COMBO_KEY; calSelectedDate=null; buildLogTabs(); renderLogStats(); renderLogList(); updateLogPageBtn(); };
     bar.appendChild(b);
   }
+  const comboLLLogs = (ST.logs||[]).filter(e=>e.drug===COMBO_KEY_LL);
   if (comboLLLogs.length) {
     const b = document.createElement('button');
     b.className = `tab-btn combo${logDrug===COMBO_KEY_LL?' active':''}`;
@@ -3427,7 +3428,7 @@ function yoursHTML(drugKey, zoneName, uid) {
   }
 
   // ── Notes: most recent + collapsed rest ────────────────────────────────
-  const allNotes = logs.filter(e=>e.note&&e.note.trim()).map(e=>e.note.trim());
+  const allNotes = recentNotes;
   if (allNotes.length && count >= 3) {
     const first = allNotes[0];
     const rest = allNotes.slice(1);
