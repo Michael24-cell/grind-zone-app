@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grind-Zone Provider Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --brand:       #8b5cf6;
+  --brand-ink:   #6d28d9;
+  --brand-soft:  #efe7ff;
+  --bg:          #f6f7f9;
+  --surface:     #ffffff;
+  --surface-2:   #f1f2f5;
+  --line:        #e4e6eb;
+  --line-strong: #d2d5dd;
+  --ink:         #1c1e26;
+  --ink-2:       #4c5060;
+  --ink-3:       #8a8f9e;
+  --good:        #2a7d46;
+  --warn:        #b03030;
+  --font-ui:     -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:   ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16171a; --surface: #202127; --surface-2: #26272e;
+    --line: #33353d; --line-strong: #44464f;
+    --ink: #e7e8ec; --ink-2: #b4b7c2; --ink-3: #7d8090;
+    --brand-soft: #2a1f47;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 60px; }
+
+/* ── Header ── */
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 50; }
+.topbar-inner { max-width: 880px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 1.02em; letter-spacing: -0.01em; }
+.brand .tagline { font-weight: 500; color: var(--ink-3); font-size: 0.78em; border-left: 1px solid var(--line-strong); padding-left: 9px; margin-left: 2px; }
+.signout-btn { background: none; border: 1px solid var(--line-strong); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-family: var(--font-ui); font-size: 0.82em; color: var(--ink-2); }
+.signout-btn:hover { background: var(--surface-2); }
+
+/* ── Auth / setup ── */
+.auth-wrap { max-width: 400px; margin: 64px auto; padding: 0 20px; text-align: center; }
+.auth-wrap h2 { margin: 0 0 6px; font-size: 1.35em; font-weight: 700; letter-spacing: -0.01em; }
+.auth-wrap .sub { color: var(--ink-3); font-size: 0.9em; margin: 0 0 24px; line-height: 1.55; }
+.auth-input { width: 100%; padding: 12px 14px; font-size: 1em; font-family: var(--font-ui); border: 1px solid var(--line-strong); border-radius: 10px; margin-bottom: 10px; background: var(--surface); color: var(--ink); }
+.auth-input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+.auth-btn { width: 100%; padding: 13px; font-size: 1em; font-family: var(--font-ui); font-weight: 600; border: none; border-radius: 10px; cursor: pointer; background: var(--brand); color: #fff; min-height: 48px; }
+.auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.auth-msg { font-size: 0.85em; margin-top: 10px; min-height: 20px; color: var(--ink-2); }
+.setup-card { max-width: 460px; margin: 48px auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: left; }
+.setup-card h2 { margin: 0 0 6px; font-size: 1.25em; }
+.setup-card .sub { color: var(--ink-3); font-size: 0.88em; margin: 0 0 20px; line-height: 1.5; }
+.field-label { display: block; font-size: 0.82em; font-weight: 600; color: var(--ink-2); margin: 0 0 5px; }
+
+/* ── Dashboard header ── */
+.dash-header { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+.dash-practice { font-size: 0.76em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); font-weight: 600; margin-bottom: 3px; }
+.dash-provider { font-size: 1.25em; font-weight: 700; letter-spacing: -0.01em; }
+.code-block { display: flex; align-items: center; gap: 10px; }
+.code-badge { font-family: var(--font-mono); font-size: 1.15em; font-weight: 700; letter-spacing: 0.18em; background: var(--brand-soft); color: var(--brand-ink); border: 1px solid var(--brand); border-radius: 10px; padding: 9px 14px; }
+@media (prefers-color-scheme: dark) { .code-badge { color: #c9b2f5; } }
+.code-label { font-size: 0.72em; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+.copy-btn { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; padding: 9px 16px; cursor: pointer; font-family: var(--font-ui); font-size: 0.84em; font-weight: 500; color: var(--ink-2); min-height: 40px; }
+.copy-btn:hover { background: var(--surface-2); }
+
+/* ── Section labels ── */
+.section-label { font-size: 0.74em; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.1em; margin: 24px 0 10px; font-weight: 600; }
+
+/* ── Patient cards ── */
+.patient-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.patient-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.patient-id { font-size: 1.05em; font-weight: 600; letter-spacing: -0.005em; word-break: break-all; }
+.patient-sub { font-size: 0.78em; color: var(--ink-3); margin-top: 3px; }
+.report-btn { background: var(--brand); color: #fff; border: none; border-radius: 9px; padding: 10px 18px; cursor: pointer; font-family: var(--font-ui); font-size: 0.86em; font-weight: 600; min-height: 42px; flex-shrink: 0; }
+.report-btn:hover { opacity: .92; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.stat-box { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+.stat-value { font-family: var(--font-mono); font-size: 1.35em; font-weight: 700; line-height: 1.15; }
+.stat-label { font-size: 0.7em; color: var(--ink-3); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.trend-wrap { margin-bottom: 12px; }
+.trend-label { font-size: 0.72em; color: var(--ink-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.tag-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag-pill { font-size: 0.76em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; color: var(--ink-2); font-weight: 500; }
+.latest-line { font-size: 0.84em; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 11px; margin-top: 2px; }
+.latest-line .mono { font-family: var(--font-mono); }
+
+/* ── Empty / loading states ── */
+.empty-state { text-align: center; padding: 46px 28px; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 14px; }
+.empty-state .icon { font-size: 2em; margin-bottom: 10px; }
+.empty-state h4 { margin: 0 0 8px; font-size: 1.05em; font-weight: 600; }
+.empty-state p { margin: 0 auto; font-size: 0.88em; color: var(--ink-3); line-height: 1.6; max-width: 420px; }
+.empty-state .code-inline { font-family: var(--font-mono); font-weight: 700; color: var(--brand-ink); letter-spacing: 0.12em; }
+@media (prefers-color-scheme: dark) { .empty-state .code-inline { color: #c9b2f5; } }
+.loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px 0; color: var(--ink-3); font-size: 0.9em; }
+.spinner { width: 18px; height: 18px; border: 2px solid var(--line-strong); border-top-color: var(--brand); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Data note ── */
+.data-note { font-size: 0.78em; color: var(--ink-3); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; margin-top: 18px; line-height: 1.6; }
+
+/* ── Toast ── */
+.toast { position: fixed; left: 50%; transform: translateX(-50%) translateY(12px); bottom: 28px; z-index: 500; background: #2a2438; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 500; box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.disclaimer { text-align: center; font-size: 0.74em; color: var(--ink-3); margin-top: 28px; font-family: var(--font-mono); }
+
+/* ── Print report ── */
+#printReport { display: none; }
+@media print {
+  body { background: #fff !important; }
+  body > *:not(#printReport) { display: none !important; }
+  #printReport { display: block !important; color: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; line-height: 1.5; }
+  #printReport h1 { font-size: 20px; margin: 0 0 2px; }
+  #printReport .pr-meta { color: #333; font-size: 11px; margin-bottom: 18px; }
+  #printReport h2 { font-size: 14px; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #000; }
+  #printReport table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  #printReport th, #printReport td { border: 1px solid #999; padding: 4px 6px; text-align: left; vertical-align: top; }
+  #printReport .pr-section { page-break-inside: avoid; }
+  #printReport .pr-break { page-break-before: always; }
+  #printReport .pr-footer { margin-top: 26px; padding-top: 8px; border-top: 1px solid #000; font-size: 10px; color: #333; }
+  #printReport .pr-mono { font-family: ui-monospace, Menlo, monospace; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg width="26" height="15" viewBox="0 0 28 16"><rect x="0" y="0" width="28" height="16" rx="8" fill="#8b5cf6"></rect><rect x="14" y="0" width="14" height="16" fill="#c4b5fd"></rect><rect x="20" y="0" width="8" height="16" rx="8" fill="#c4b5fd"></rect><line x1="14" y1="1" x2="14" y2="15" stroke="white" stroke-width="1.5"></line></svg>
+      Grind-Zone <span class="tagline">Provider Portal</span>
+    </div>
+    <button class="signout-btn" id="signOutBtn" style="display:none;" onclick="handleSignOut()">Sign out</button>
+  </div>
+</div>
+
+<!-- AUTH -->
+<div id="viewAuth" style="display:none;">
+  <div class="auth-wrap">
+    <h2>Provider sign in</h2>
+    <p class="sub">Sign in with your work email. We'll send you a 6-digit code — no password needed.</p>
+    <div id="authStep1">
+      <input class="auth-input" type="email" id="authEmail" placeholder="you@practice.com" onkeydown="if(event.key==='Enter') sendCode()">
+      <button class="auth-btn" id="authBtn" onclick="sendCode()">Send sign-in code</button>
+      <div class="auth-msg" id="authMsg"></div>
+    </div>
+    <div id="authStep2" style="display:none;">
+      <p class="sub" style="margin-bottom:4px;">Check your email for a 6-digit code.</p>
+      <p id="authCodeEmail" style="color:var(--brand-ink);font-size:0.88em;font-weight:600;margin:0 0 16px;"></p>
+      <input class="auth-input" type="number" id="authCode" placeholder="123456" style="font-size:1.5em;text-align:center;letter-spacing:0.15em;" onkeydown="if(event.key==='Enter') verifyCode()" oninput="if(this.value.length>=6) verifyCode()">
+      <button class="auth-btn" id="verifyBtn" onclick="verifyCode()">Verify</button>
+      <div class="auth-msg" id="authMsg2"></div>
+      <div style="margin-top:14px;display:flex;justify-content:space-between;font-size:0.82em;">
+        <span style="color:var(--ink-3);cursor:pointer;" onclick="backToEmail()">← Different email</span>
+        <span style="color:var(--brand-ink);cursor:pointer;font-weight:500;" onclick="resendCode()">Resend code</span>
+      </div>
+    </div>
+    <p class="disclaimer">Read-only access to logs patients have explicitly shared. Not medical advice.</p>
+  </div>
+</div>
+
+<!-- FIRST-LOGIN SETUP -->
+<div id="viewSetup" style="display:none;">
+  <div class="setup-card">
+    <h2>Set up your provider profile</h2>
+    <p class="sub">Patients will see this name and practice when they link to you. You'll get a share code to give your patients.</p>
+    <label class="field-label" for="setupName">Your name</label>
+    <input class="auth-input" type="text" id="setupName" placeholder="Dr. Jane Rivera">
+    <label class="field-label" for="setupPractice">Practice name</label>
+    <input class="auth-input" type="text" id="setupPractice" placeholder="Riverside Psychiatry">
+    <button class="auth-btn" id="setupBtn" onclick="createProviderProfile()">Create profile</button>
+    <div class="auth-msg" id="setupMsg"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="viewDash" style="display:none;">
+  <div class="wrap">
+    <div class="dash-header" id="dashHeader"></div>
+    <div class="section-label">Linked patients</div>
+    <div id="patientList"><div class="loading"><div class="spinner"></div>Loading patients…</div></div>
+    <div class="data-note">
+      <strong>What you're seeing:</strong> patient-reported feel scores, tags, notes, and zone context synced from each patient's account.
+      Active medication lists, selected doses, and live PK zone status are stored on the patient's device and are not yet synced — those appear on the patient's own in-app prescriber report. Access is read-only and only for patients who linked to you with your code; patients can unlink at any time.
+    </div>
+    <p class="disclaimer">Not medical advice. Generated by Grind-Zone.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="printReport"></div>
+
+<script>
+// ─── SUPABASE (same project as the patient app) ──────────────────────────────
+const SUPA_URL = 'https://jgcanhzxspptcogwoxgn.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnY2FuaHp4c3BwdGNvZ3dveGduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwMDk5ODcsImV4cCI6MjA4NzU4NTk4N30.NOruwfSS01F_DubNy3p-ijSlJERZ5-fR5gKldpKGfnA';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+let currentUser = null;
+let providerProfile = null;
+let patientCache = []; // [{link, logs}]
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Same logical-day convention as the patient app: before 3am belongs to the previous day
+function appDay(date) {
+  const d = date ? new Date(date) : new Date();
+  if (d.getHours() < 3) d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function to12(t) {
+  if (!t) return '';
+  const [hh, mm] = String(t).split(':').map(Number);
+  if (isNaN(hh)) return t;
+  const ap = hh >= 12 ? 'PM' : 'AM';
+  const h = hh % 12 === 0 ? 12 : hh % 12;
+  return `${h}:${String(mm).padStart(2, '0')} ${ap}`;
+}
+
+let _toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function showView(id) {
+  ['viewAuth', 'viewSetup', 'viewDash'].forEach(v => {
+    document.getElementById(v).style.display = v === id ? 'block' : 'none';
+  });
+  document.getElementById('signOutBtn').style.display = currentUser ? 'inline-block' : 'none';
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await supa.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadProviderProfile();
+  } else {
+    showView('viewAuth');
+  }
+  supa.auth.onAuthStateChange((_event, session) => {
+    if (session && !currentUser) {
+      currentUser = session.user;
+      loadProviderProfile();
+    }
+  });
+}
+
+// ─── AUTH ────────────────────────────────────────────────────────────────────
+let _pendingEmail = '';
+
+async function sendCode() {
+  const email = document.getElementById('authEmail').value.trim();
+  const btn = document.getElementById('authBtn');
+  const msg = document.getElementById('authMsg');
+  if (!email || !email.includes('@')) { msg.textContent = 'Enter a valid email.'; msg.style.color = 'var(--warn)'; return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  const { error } = await supa.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  if (error) {
+    msg.textContent = 'Error: ' + error.message; msg.style.color = 'var(--warn)';
+    btn.disabled = false; btn.textContent = 'Send sign-in code';
+  } else {
+    _pendingEmail = email;
+    document.getElementById('authStep1').style.display = 'none';
+    document.getElementById('authStep2').style.display = 'block';
+    document.getElementById('authCodeEmail').textContent = email;
+    setTimeout(() => document.getElementById('authCode')?.focus(), 100);
+  }
+}
+
+async function verifyCode() {
+  const code = document.getElementById('authCode').value.trim();
+  const btn = document.getElementById('verifyBtn');
+  const msg = document.getElementById('authMsg2');
+  if (!code || code.length < 6) { msg.textContent = 'Enter the 6-digit code.'; msg.style.color = 'var(--warn)'; return; }
+  btn.disabled = true; btn.textContent = 'Verifying…';
+  const { data, error } = await supa.auth.verifyOtp({ email: _pendingEmail, token: code, type: 'email' });
+  if (error) {
+    msg.textContent = 'Wrong code or expired. Try again or resend.'; msg.style.color = 'var(--warn)';
+    btn.disabled = false; btn.textContent = 'Verify';
+  } else if (data?.session) {
+    currentUser = data.session.user;
+    loadProviderProfile();
+  }
+}
+
+async function resendCode() {
+  const msg = document.getElementById('authMsg2');
+  msg.textContent = 'Sending…'; msg.style.color = 'var(--ink-3)';
+  const { error } = await supa.auth.signInWithOtp({ email: _pendingEmail, options: { shouldCreateUser: true } });
+  if (error) { msg.textContent = 'Error: ' + error.message; msg.style.color = 'var(--warn)'; }
+  else { msg.textContent = '✓ New code sent'; msg.style.color = 'var(--good)'; }
+}
+
+function backToEmail() {
+  _pendingEmail = '';
+  document.getElementById('authStep1').style.display = 'block';
+  document.getElementById('authStep2').style.display = 'none';
+  document.getElementById('authBtn').disabled = false;
+  document.getElementById('authBtn').textContent = 'Send sign-in code';
+}
+
+async function handleSignOut() {
+  if (!confirm('Sign out of the provider portal?')) return;
+  await supa.auth.signOut();
+  currentUser = null;
+  providerProfile = null;
+  patientCache = [];
+  document.getElementById('authStep1').style.display = 'block';
+  document.getElementById('authStep2').style.display = 'none';
+  showView('viewAuth');
+}
+
+// ─── PROVIDER PROFILE ────────────────────────────────────────────────────────
+async function loadProviderProfile() {
+  const { data, error } = await supa.from('providers')
+    .select('id, name, practice_name, code')
+    .eq('user_id', currentUser.id)
+    .limit(1);
+  if (error) {
+    console.error('Provider profile error:', error);
+    showToast('Could not load your profile — check the database setup');
+    showView('viewAuth');
+    return;
+  }
+  providerProfile = (data || [])[0] || null;
+  if (!providerProfile) {
+    showView('viewSetup');
+  } else {
+    renderDashboard();
+  }
+}
+
+function generateCode() {
+  // 6-char uppercase alphanumeric, skipping easily-confused characters
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let out = '';
+  const rand = new Uint32Array(6);
+  crypto.getRandomValues(rand);
+  for (let i = 0; i < 6; i++) out += chars[rand[i] % chars.length];
+  return out;
+}
+
+async function createProviderProfile() {
+  const name = document.getElementById('setupName').value.trim();
+  const practice = document.getElementById('setupPractice').value.trim();
+  const btn = document.getElementById('setupBtn');
+  const msg = document.getElementById('setupMsg');
+  if (!name) { msg.textContent = 'Enter your name.'; msg.style.color = 'var(--warn)'; return; }
+  btn.disabled = true; btn.textContent = 'Creating…';
+
+  // Retry a few times in case of a code collision on the unique index
+  let lastError = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const { data, error } = await supa.from('providers')
+      .insert({ user_id: currentUser.id, name, practice_name: practice || null, code: generateCode() })
+      .select('id, name, practice_name, code')
+      .single();
+    if (!error) { providerProfile = data; renderDashboard(); return; }
+    lastError = error;
+    if (error.code !== '23505') break; // only retry unique violations
+  }
+  console.error('Provider create error:', lastError);
+  btn.disabled = false; btn.textContent = 'Create profile';
+  msg.textContent = 'Could not create your profile. Try again.'; msg.style.color = 'var(--warn)';
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(providerProfile.code).then(
+    () => showToast('Code copied — share it with your patients'),
+    () => showToast('Copy failed — code: ' + providerProfile.code)
+  );
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+function renderDashboard() {
+  showView('viewDash');
+  const h = document.getElementById('dashHeader');
+  h.innerHTML = `
+    <div>
+      ${providerProfile.practice_name ? `<div class="dash-practice">${esc(providerProfile.practice_name)}</div>` : ''}
+      <div class="dash-provider">${esc(providerProfile.name)}</div>
+    </div>
+    <div class="code-block">
+      <div>
+        <div class="code-label">Patient link code</div>
+        <div class="code-badge">${esc(providerProfile.code)}</div>
+      </div>
+      <button class="copy-btn" onclick="copyCode()">Copy code</button>
+    </div>`;
+  loadPatients();
+}
+
+async function loadPatients() {
+  const list = document.getElementById('patientList');
+  list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading patients…</div>';
+
+  const { data: links, error } = await supa.from('patient_provider_links')
+    .select('id, patient_user_id, patient_email, confirmed, created_at')
+    .eq('provider_id', providerProfile.id)
+    .eq('confirmed', true)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Links fetch error:', error);
+    list.innerHTML = '<div class="empty-state"><h4>Could not load patients</h4><p>Check your connection and refresh.</p></div>';
+    return;
+  }
+
+  if (!links || !links.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🩺</div>
+        <h4>No linked patients yet</h4>
+        <p>Share this code with patients — they enter it in <strong>Settings&nbsp;›&nbsp;Link to prescriber</strong> in the Grind-Zone app:</p>
+        <p style="margin-top:10px;"><span class="code-inline" style="font-size:1.3em;">${esc(providerProfile.code)}</span></p>
+      </div>`;
+    return;
+  }
+
+  // One query for all linked patients' logs — RLS restricts to confirmed links
+  const ids = links.map(l => l.patient_user_id);
+  const { data: logs, error: logErr } = await supa.from('logs')
+    .select('user_id, drug, feel, tags, note, time, dose_time, elapsed_h, zone, ts')
+    .in('user_id', ids)
+    .order('ts', { ascending: false })
+    .limit(4000);
+
+  if (logErr) console.error('Logs fetch error:', logErr);
+  const byPatient = {};
+  (logs || []).forEach(r => { (byPatient[r.user_id] = byPatient[r.user_id] || []).push(r); });
+
+  patientCache = links.map(l => ({ link: l, logs: byPatient[l.patient_user_id] || [] }));
+  list.innerHTML = patientCache.map((p, i) => patientCardHTML(p, i)).join('');
+}
+
+// ── Per-patient stats over the last 30 logical days ──
+function patientStats(logs) {
+  const days30 = [];
+  const anchor = new Date();
+  if (anchor.getHours() < 3) anchor.setDate(anchor.getDate() - 1);
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(anchor); d.setDate(anchor.getDate() - i);
+    days30.push(appDay(d));
+  }
+  const set30 = new Set(days30);
+  const logs30 = logs.filter(e => e.ts && set30.has(appDay(e.ts)));
+
+  const byDay = {};
+  logs30.forEach(e => { const dk = appDay(e.ts); (byDay[dk] = byDay[dk] || []).push(e.feel); });
+
+  const tagCount = {};
+  logs30.forEach(e => (e.tags || []).forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; }));
+  const topTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+  const avg30 = logs30.length ? logs30.reduce((s, e) => s + e.feel, 0) / logs30.length : null;
+  return { days30, byDay, logs30, topTags, avg30, daysTracked: Object.keys(byDay).length };
+}
+
+function trendSvg(days30, byDay, width, height) {
+  const PAD = 6, barW = (width - PAD * 2) / 30;
+  let bars = '';
+  days30.forEach((dk, i) => {
+    const vals = byDay[dk];
+    const x = PAD + i * barW + 0.5;
+    if (!vals) {
+      bars += `<rect x="${x.toFixed(1)}" y="${height - 8}" width="${(barW - 1.5).toFixed(1)}" height="2" fill="var(--line-strong)"/>`;
+      return;
+    }
+    const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+    const h = (avg / 10) * (height - 12);
+    const shade = avg >= 7 ? '#4caf50' : avg >= 4 ? '#9aa0ad' : '#e57373';
+    bars += `<rect x="${x.toFixed(1)}" y="${(height - 6 - h).toFixed(1)}" width="${(barW - 1.5).toFixed(1)}" height="${h.toFixed(1)}" fill="${shade}" rx="1"/>`;
+  });
+  return `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+}
+
+function patientCardHTML(p, idx) {
+  const { link, logs } = p;
+  const s = patientStats(logs);
+  const latest = logs[0];
+  const latestLine = latest
+    ? `Latest: <span class="mono">${esc(appDay(latest.ts))} ${esc(to12(latest.time))}</span> · ${esc(latest.drug)} · ${esc((latest.zone || '—').replace(' ⭐', ''))} · feel <strong>${latest.feel}/10</strong>`
+    : 'No log entries synced yet.';
+
+  return `<div class="patient-card">
+    <div class="patient-head">
+      <div>
+        <div class="patient-id">${esc(link.patient_email || 'Patient ' + link.patient_user_id.slice(0, 8))}</div>
+        <div class="patient-sub">Linked ${esc(new Date(link.created_at).toLocaleDateString())} · ${logs.length} total entries</div>
+      </div>
+      <button class="report-btn" onclick="openPatientReport(${idx})">View report</button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-value">${s.avg30 != null ? s.avg30.toFixed(1) : '—'}</div><div class="stat-label">Avg feel · 30d</div></div>
+      <div class="stat-box"><div class="stat-value">${s.daysTracked}<span style="font-size:0.55em;color:var(--ink-3);font-weight:500;"> / 30</span></div><div class="stat-label">Days tracked</div></div>
+      <div class="stat-box"><div class="stat-value">${s.logs30.length}</div><div class="stat-label">Entries · 30d</div></div>
+    </div>
+    <div class="trend-wrap">
+      <div class="trend-label">30-day feel trend</div>
+      ${s.logs30.length ? trendSvg(s.days30, s.byDay, 600, 54) : '<div style="font-size:0.8em;color:var(--ink-3);">No entries in the last 30 days.</div>'}
+    </div>
+    ${s.topTags.length ? `<div class="tag-pills">${s.topTags.map(([t, c]) => `<span class="tag-pill">${esc(t)} · ${c}×</span>`).join('')}</div>` : ''}
+    <div class="latest-line" style="margin-top:${s.topTags.length ? '12px' : '2px'};">${latestLine}</div>
+  </div>`;
+}
+
+// ─── PATIENT PRINT REPORT ────────────────────────────────────────────────────
+function openPatientReport(idx) {
+  const p = patientCache[idx];
+  if (!p) return;
+  document.getElementById('printReport').innerHTML = patientReportHTML(p);
+  window.print();
+}
+
+function patientReportHTML(p) {
+  const { link, logs } = p;
+  const s = patientStats(logs);
+  const now = new Date();
+
+  // Print trend chart with value labels
+  const BW = 660, BH = 120, PAD = 24, barW = (BW - PAD * 2) / 30;
+  let bars = '';
+  s.days30.forEach((dk, i) => {
+    const vals = s.byDay[dk];
+    if (!vals) return;
+    const avg = vals.reduce((a, v) => a + v, 0) / vals.length;
+    const h = (avg / 10) * (BH - 30);
+    const x = PAD + i * barW + 1;
+    const shade = avg >= 7 ? '#4caf50' : avg >= 4 ? '#9e9e9e' : '#e57373';
+    bars += `<rect x="${x.toFixed(1)}" y="${(BH - 18 - h).toFixed(1)}" width="${(barW - 2).toFixed(1)}" height="${h.toFixed(1)}" fill="${shade}"/>`;
+  });
+  const axis = [0, 9, 19, 29].map(i => `<text x="${(PAD + i * barW + barW / 2).toFixed(1)}" y="${BH - 6}" text-anchor="middle" font-size="8" fill="#555">${s.days30[i].slice(5)}</text>`).join('');
+  const chart = `<svg width="${BW}" height="${BH}" viewBox="0 0 ${BW} ${BH}" xmlns="http://www.w3.org/2000/svg"><line x1="${PAD}" y1="${BH - 18}" x2="${BW - PAD}" y2="${BH - 18}" stroke="#000" stroke-width="1"/>${bars}${axis}</svg>`;
+
+  const drugsSeen = [...new Set(s.logs30.map(e => e.drug))];
+  const last20 = logs.slice(0, 20);
+  const rows = last20.map(e => `<tr>
+      <td class="pr-mono">${esc(e.ts ? appDay(e.ts) : '')}</td>
+      <td class="pr-mono">${esc(to12(e.time))}</td>
+      <td>${esc(e.drug)}</td>
+      <td>${esc((e.zone || '—').replace(' ⭐', ''))}</td>
+      <td class="pr-mono">${e.feel}/10</td>
+      <td>${esc((e.tags || []).join(', '))}</td>
+      <td>${esc(e.note || '')}</td>
+    </tr>`).join('');
+
+  return `
+  <h1>Grind-Zone Patient Report</h1>
+  <div class="pr-meta">
+    Patient: <strong>${esc(link.patient_email || link.patient_user_id)}</strong> ·
+    Prepared for: ${esc(providerProfile.name)}${providerProfile.practice_name ? ' (' + esc(providerProfile.practice_name) + ')' : ''} ·
+    Generated: ${esc(now.toLocaleString())} · Window: last 30 days
+  </div>
+
+  <div class="pr-section">
+    <h2>30-day feel score trend (1–10 self-report)</h2>
+    ${s.logs30.length ? chart : '<p>No entries in the last 30 days.</p>'}
+    <p>Average feel score: <strong>${s.avg30 != null ? s.avg30.toFixed(1) : '—'}</strong> across ${s.logs30.length} entries.</p>
+  </div>
+
+  <div class="pr-section">
+    <h2>Adherence to self-tracking</h2>
+    <p><strong>${s.daysTracked} / 30 days</strong> with at least one entry · ${30 - s.daysTracked} days without entries.</p>
+  </div>
+
+  <div class="pr-section">
+    <h2>Medications appearing in logs (30 days)</h2>
+    <p>${drugsSeen.length ? drugsSeen.map(esc).join(' · ') : 'No entries in the last 30 days.'}</p>
+    <p style="font-size:10px;color:#555;">Note: the patient's full active medication list and selected doses are stored on their device and are not synced to the provider portal. The patient can print a fuller report (including dose selections and treatment timeline) from their own app under Settings › Export for prescriber.</p>
+  </div>
+
+  <div class="pr-section">
+    <h2>Most frequent tags (30 days)</h2>
+    <p>${s.topTags.length ? s.topTags.map(([t, c]) => `${esc(t)} (${c}×)`).join(' · ') : 'No tags recorded.'}</p>
+  </div>
+
+  <div class="pr-section pr-break">
+    <h2>Last 20 log entries</h2>
+    ${last20.length ? `<table>
+      <tr><th>Date</th><th>Time</th><th>Medication</th><th>Zone</th><th>Feel</th><th>Tags</th><th>Note</th></tr>
+      ${rows}
+    </table>` : '<p>No log entries synced.</p>'}
+  </div>
+
+  <div class="pr-footer">Not medical advice. Generated by Grind-Zone. Zone labels reflect patient-entered dose times and published pharmacokinetic ranges; they are not clinical measurements.</div>`;
+}
+
+init();
+</script>
+</body>
+</html>
