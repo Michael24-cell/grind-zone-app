@@ -152,7 +152,6 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
       <input class="auth-input" type="email" id="authEmail" placeholder="you@practice.com" onkeydown="if(event.key==='Enter') sendCode()">
       <button class="auth-btn" id="authBtn" onclick="sendCode()">Send sign-in code</button>
       <div class="auth-msg" id="authMsg"></div>
-      <button class="auth-btn" style="margin-top:8px;background:transparent;color:var(--ink-3);border:1px dashed var(--line-strong);" onclick="devSkipAuth()">Skip sign-in (preview only)</button>
     </div>
     <div id="authStep2" style="display:none;">
       <p class="sub" style="margin-bottom:4px;">Check your email for a 6-digit code.</p>
@@ -327,32 +326,6 @@ async function handleSignOut() {
   document.getElementById('authStep1').style.display = 'block';
   document.getElementById('authStep2').style.display = 'none';
   showView('viewAuth');
-}
-
-// ─── DEV PREVIEW (bypasses real auth — remove before shipping) ────────────────
-function devSkipAuth() {
-  providerProfile = { id: 'preview', name: 'Dr. Preview', practice_name: 'Preview Practice', code: 'PREVIEW' };
-  showView('viewDash');
-  const h = document.getElementById('dashHeader');
-  h.innerHTML = `
-    <div>
-      <div class="dash-practice">${esc(providerProfile.practice_name)}</div>
-      <div class="dash-provider">${esc(providerProfile.name)}</div>
-    </div>
-    <div class="code-block">
-      <div>
-        <div class="code-label">Patient link code</div>
-        <div class="code-badge">${esc(providerProfile.code)}</div>
-      </div>
-      <button class="copy-btn" onclick="copyCode()">Copy code</button>
-    </div>`;
-  document.getElementById('patientList').innerHTML = `
-    <div class="empty-state">
-      <div class="icon">🩺</div>
-      <h4>No linked patients yet</h4>
-      <p>Share this code with patients — they enter it in <strong>Settings&nbsp;›&nbsp;Link to prescriber</strong> in the Grind-Zone app:</p>
-      <p style="margin-top:10px;"><span class="code-inline" style="font-size:1.3em;">${esc(providerProfile.code)}</span></p>
-    </div>`;
 }
 
 // ─── PROVIDER PROFILE ────────────────────────────────────────────────────────
