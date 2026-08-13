@@ -488,6 +488,11 @@ body.dark .dose-time-block { background:rgba(255,255,255,.05); }
 .dose-time-now-btn { font-size:0.72em; font-weight:700; color:var(--brand-ink); background:var(--brand-soft); border:1px solid rgba(139,92,246,.3); border-radius:var(--radius-pill); padding:5px 11px; white-space:nowrap; flex-shrink:0; cursor:pointer; font-family:var(--font-ui); transition:background .15s; }
 .dose-time-now-btn:hover { background:var(--brand-100); }
 body.dark .dose-time-now-btn { background:#2a1a3a; color:#d09af0; border-color:#5b21b6; }
+.dose-card-hdr { display:flex; align-items:center; gap:9px; margin-bottom:16px; }
+.dose-card-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.dose-card-title { font-weight:700; font-size:1.0em; color:var(--ink); letter-spacing:-0.01em; }
+.dose-time-badge { font-size:0.72em; font-weight:700; color:#22863a; background:rgba(34,134,58,.1); border-radius:var(--radius-pill); padding:3px 9px; white-space:nowrap; flex-shrink:0; }
+body.dark .dose-time-badge { color:#5cb87a; background:rgba(92,184,122,.12); }
 /* Sex selector */
 .sex-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
 .sex-row .label { font-size:0.84em; color:var(--ink-2); }
@@ -715,8 +720,10 @@ body.dark .card { box-shadow: none; }
   box-shadow: 0 0 0 3px rgba(0,0,0,.04);
 }
 .zone-hdr-main { flex: 1; min-width: 0; }
-.zone-title-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.zone-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 #zonesOut .zone-title { font-size: 1.04em; font-weight: 700; letter-spacing: -0.01em; }
+.zone-name { font-weight: 700; font-size: 1.05em; color: var(--ink); letter-spacing: -0.01em; }
+.zone-tagline-sub { font-size: 0.81em; color: var(--ink-3); margin-top: 3px; font-style: italic; }
 .zone-range-right {
   font-family: var(--font-mono); font-size: 0.8em; color: var(--ink-3);
   white-space: nowrap; flex-shrink: 0; margin-left: auto; align-self: center;
@@ -741,14 +748,16 @@ body.dark #zonesOut .zone-row.is-now .zone-hdr { background: rgba(91,33,182,.24)
 }
 body.dark .you-are-here { background: var(--brand-hover); color: #fff; }
 
-/* Empty-state secondary link (e.g. "How zones work") */
-.empty-state .es-link {
-  display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 600;
+/* Secondary link (e.g. "How zones work") — used in empty states and section labels */
+.es-link {
+  display: inline-block; font-size: 12.5px; font-weight: 600;
+  text-transform: none; letter-spacing: normal;
   color: var(--brand-ink); background: none; border: none; cursor: pointer;
   font-family: var(--font-ui); text-decoration: none;
 }
-.empty-state .es-link:hover { text-decoration: underline; }
-body.dark .empty-state .es-link { color: #d09af0; }
+.empty-state .es-link { margin-top: 12px; }
+.es-link:hover { text-decoration: underline; }
+body.dark .es-link { color: #d09af0; }
 
 /* ── "How Grind-Zone works" guide ──────────────────────────────────── */
 .guide-intro { font-size: 0.95em; color: var(--ink-2); line-height: 1.6; margin: 0 0 4px; }
@@ -793,6 +802,77 @@ body.dark .guide-entry-card { background: #2a1a3a; border-color: #5b21b6; }
 body.dark .guide-entry-title { color: #d09af0; }
 .guide-entry-sub { font-size: 0.8em; color: var(--ink-3); margin-top: 2px; }
 .guide-entry-arrow { font-size: 1.3em; color: var(--brand); flex-shrink: 0; }
+
+/* ── Hero "right now" card (replaces flat now-card for the primary view) ── */
+.hero-card {
+  background: linear-gradient(140deg, #f2edff 0%, #ece6fb 65%, #f2edff 100%);
+  border: 1px solid rgba(139,92,246,.18);
+  border-radius: var(--radius-lg);
+  padding: 24px 22px 22px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 20px -6px rgba(139,92,246,.2), var(--shadow-card);
+}
+.hero-card::before {
+  content: ''; position: absolute; top: -32px; right: -32px;
+  width: 130px; height: 130px; border-radius: 50%;
+  background: rgba(139,92,246,.07); pointer-events: none;
+}
+.hero-card::after {
+  content: ''; position: absolute; top: 8px; right: 52px;
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(192,112,232,.06); pointer-events: none;
+}
+body.dark .hero-card {
+  background: linear-gradient(140deg, #2c1c42 0%, #241538 65%, #2c1c42 100%);
+  border-color: rgba(139,92,246,.32);
+  box-shadow: 0 2px 20px -6px rgba(0,0,0,.5);
+}
+.hero-card-empty { background: var(--surface-2); border-color: var(--line); box-shadow: var(--shadow-card); }
+body.dark .hero-card-empty { background: var(--surface); border-color: var(--line); }
+.hero-card-inner { display: flex; align-items: center; gap: 14px; }
+.hero-card-main { flex: 1; min-width: 0; }
+.hero-clock-circle {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: #12101c; color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.35em; flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0,0,0,.22);
+  cursor: pointer; transition: transform .1s, background .15s; user-select: none;
+}
+.hero-clock-circle:hover { background: #1e1a2e; transform: scale(1.04); }
+.hero-clock-circle:active { transform: scale(.97); }
+body.dark .hero-clock-circle { background: rgba(255,255,255,.14); }
+.hero-eyebrow {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.67em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.13em;
+  color: var(--brand-ink); margin-bottom: 12px; opacity: 0.82;
+}
+.hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 3px rgba(139,92,246,.22); flex-shrink: 0; }
+body.dark .hero-eyebrow { color: #d09af0; }
+.hero-zone-name { font-size: 2.4em; font-weight: 800; letter-spacing: -0.035em; color: var(--ink); line-height: 1.1; margin-bottom: 8px; text-wrap: pretty; }
+body.dark .hero-zone-name { color: #ede5f8; }
+.hero-status-line { font-family: var(--font-mono); font-size: 0.83em; color: var(--ink-2); line-height: 1.5; }
+body.dark .hero-status-line { color: #9a90aa; }
+.hero-power-strip { height: 4px; background: rgba(139,92,246,.14); border-radius: 999px; margin: 14px 0 0; overflow: hidden; }
+body.dark .hero-power-strip { background: rgba(192,112,232,.2); }
+.hero-power-fill { height: 100%; border-radius: 999px; transition: width .5s ease; }
+.hero-drug-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.hero-drug-chip {
+  background: rgba(255,255,255,.55); border: 1px solid rgba(139,92,246,.18);
+  border-radius: var(--radius-md); padding: 11px 13px; cursor: pointer;
+  transition: background .12s, box-shadow .15s;
+}
+.hero-drug-chip:hover { background: rgba(255,255,255,.82); box-shadow: var(--shadow-pop); }
+.hero-drug-chip.is-active { border-color: var(--brand); background: rgba(255,255,255,.88); box-shadow: 0 0 0 2px rgba(139,92,246,.2), var(--shadow-card); }
+body.dark .hero-drug-chip { background: rgba(60,32,82,.5); border-color: rgba(139,92,246,.25); }
+body.dark .hero-drug-chip:hover { background: rgba(72,38,96,.75); }
+body.dark .hero-drug-chip.is-active { border-color: var(--brand); background: rgba(78,42,102,.88); }
+.hero-chip-label { font-size: 0.64em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); margin-bottom: 3px; }
+.hero-chip-zone { font-size: 0.9em; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; line-height: 1.2; }
+body.dark .hero-chip-zone { color: #e0d8ec; }
+.hero-chip-meta { font-family: var(--font-mono); font-size: 0.7em; color: var(--ink-2); margin-top: 3px; }
 
 </style>
 
@@ -2331,11 +2411,16 @@ function renderInput() {
   }
 
   document.getElementById('doseArea').innerHTML =
+    `<div class="dose-card-hdr">
+      <span class="dose-card-dot" style="background:${d.color};"></span>
+      <span class="dose-card-title">${d.name}</span>
+    </div>` +
     doseHtml + sexHtml +
     `<div class="dose-time-block" id="doseTimeBlock" onclick="focusDoseTime(event)">
-      <div class="dose-time-label">Dose time (${d.name})</div>
+      <div class="dose-time-label">When did you take it?</div>
       <div class="dose-time-picker">
         <input type="time" id="dtInput" value="${saved}" oninput="onDose(this.value)" onclick="event.stopPropagation();">
+        ${saved ? `<div class="dose-time-badge">✓ set</div>` : ''}
         <button type="button" class="dose-time-now-btn" onclick="event.stopPropagation();setDoseToNow();">Now</button>
       </div>
     </div>`;
@@ -2907,28 +2992,33 @@ function renderComboPanelLL() {
   </div>`;
 }
 
+function zonePowerPct(z) {
+  const num = z.power !== '—' ? parseFloat(z.power.split('/')[0].split('–')[1] || z.power.split('/')[0]) : null;
+  return num ? Math.round((num/10)*100) : 0;
+}
+
 function renderNow() {
   const ban = document.getElementById('nowBanner');
-  // Show a card for EVERY active drug that has a dose time — not just the current tab
+  // Show hero content for EVERY active drug that has a dose time — not just the current tab
   const dosed = ST.active.filter(k => ST.doses[k]);
   if (!dosed.length) {
     ban.style.display='block';
-    ban.innerHTML = `<div class="empty-state" style="margin-bottom:0;">
-      <div class="es-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
-      <h4>No dose time set today</h4>
-      <p>Enter when you took your medication and Grind-Zone will show what it's doing right now.</p>
-      <button class="es-action" onclick="focusDoseTime()">Set dose time</button>
-      <div><button class="es-link" onclick="goPage('guide')">How zones work →</button></div>
+    ban.innerHTML = `<div class="hero-card hero-card-empty">
+      <div class="hero-eyebrow"><span class="dot"></span>Right now</div>
+      <div class="hero-zone-name" style="font-size:1.45em;color:var(--ink-3);font-weight:600;">No dose logged yet</div>
+      <div class="hero-status-line">Enter when you took your medication to see your zone.</div>
+      <button class="es-action" style="margin-top:16px;" onclick="focusDoseTime()">Set dose time</button>
     </div>`;
     return;
   }
 
   const now = nowH();
   const timeStr = fmt(now);
+  const eyebrow = `<div class="hero-eyebrow"><span class="dot"></span>Right now &thinsp;&middot;&thinsp; <span style="font-family:var(--font-mono);letter-spacing:0;text-transform:none;font-weight:500;opacity:1;">${timeStr}</span></div>`;
 
-  let html = `<div class="now-stamp"><span class="dot"></span>Right now <span class="time">${timeStr}</span></div>`;
+  let html;
 
-  // If only one drug, render as single wide card (original style)
+  // If only one drug, render as a single big hero card
   if (dosed.length === 1) {
     const k = dosed[0], d = DRUGS[k];
     const [hh,mm] = ST.doses[k].split(':').map(Number), dose = hh+mm/60;
@@ -2936,33 +3026,48 @@ function renderNow() {
     const z = getZone(dose, effZones);
     const elap = ((now-dose)%24+24)%24, mins = Math.round(elap*60);
     const elStr = mins<60?`${mins}m ago`:`${Math.floor(mins/60)}h ${mins%60}m ago`;
-    const bg = nowCardBg(z, d);
-    html += `<div class="now-card" style="${bg}" onclick="setDrug('${k}')">
-      <div class="now-card-label">${d.name}</div>
-      <div class="now-card-zone">${z.label.replace(' ⭐','')}</div>
-      <div class="now-card-meta">Dosed ${elStr}${z.power!=='—'?' · '+z.power:''}</div>
+    const barW = zonePowerPct(z);
+    html = `<div class="hero-card">
+      ${eyebrow}
+      <div class="hero-card-inner">
+        <div class="hero-card-main">
+          <div class="hero-zone-name">${z.label.replace(' ⭐','')}</div>
+          <div class="hero-status-line">${d.name} &middot; dosed ${elStr}${z.power!=='—'?' &middot; '+z.power:''}</div>
+          ${barW ? `<div class="hero-power-strip"><div class="hero-power-fill" style="width:${barW}%;background:${d.color};"></div></div>` : ''}
+        </div>
+        <div class="hero-clock-circle" onclick="openLogModal()" title="Log now">⏱</div>
+      </div>
     </div>`;
   } else {
-    // Multiple drugs — side by side grid
-    const colsCls = dosed.length === 2 ? 'cols-2' : dosed.length === 3 ? 'cols-3' : 'cols-4';
-    html += `<div class="now-card-grid ${colsCls}">`;
-    dosed.forEach(k => {
-      const d = DRUGS[k];
+    // Multiple drugs — big hero for the active tab, compact chips for the rest
+    const k = activeDrug, d = DRUGS[k];
+    let mainHTML = '';
+    if (ST.doses[k]) {
       const [hh,mm] = ST.doses[k].split(':').map(Number), dose = hh+mm/60;
-      const z = getZone(dose, d.zones);
+      const {zones:effZones} = getEffectiveZones(k);
+      const z = getZone(dose, effZones);
       const elap = ((now-dose)%24+24)%24, mins = Math.round(elap*60);
       const elStr = mins<60?`${mins}m ago`:`${Math.floor(mins/60)}h ${mins%60}m ago`;
-      const bg = nowCardBg(z, d);
-      const powerNum = z.power !== '—' ? parseFloat(z.power.split('/')[0].split('–')[1] || z.power.split('/')[0]) : null;
-      const barW = powerNum ? Math.round((powerNum/10)*100) : 0;
-      html += `<div class="now-card compact" style="${bg}" onclick="setDrug('${k}')">
-        <div class="now-card-label">${d.name}</div>
-        <div class="now-card-zone">${z.label.replace(' ⭐','')}</div>
-        ${powerNum ? `<div class="now-power-bar"><div class="now-power-fill" style="width:${barW}%;background:${d.color};"></div></div>` : ''}
-        <div class="now-card-meta">${elStr}${z.power!=='—'?' · '+z.power:''}</div>
+      const barW = zonePowerPct(z);
+      mainHTML = `<div class="hero-zone-name">${z.label.replace(' ⭐','')}</div>
+        <div class="hero-status-line">${d.short} &middot; dosed ${elStr}${z.power!=='—'?' &middot; '+z.power:''}</div>
+        ${barW ? `<div class="hero-power-strip"><div class="hero-power-fill" style="width:${barW}%;background:${d.color};"></div></div>` : ''}`;
+    }
+    let chipsHtml = `<div class="hero-drug-grid">`;
+    dosed.forEach(dk => {
+      const dd = DRUGS[dk];
+      const [dhh,dmm] = ST.doses[dk].split(':').map(Number), ddose = dhh+dmm/60;
+      const dz = getZone(ddose, dd.zones);
+      const delap = ((now-ddose)%24+24)%24, dmins = Math.round(delap*60);
+      const delStr = dmins<60?`${dmins}m ago`:`${Math.floor(dmins/60)}h ${dmins%60}m ago`;
+      chipsHtml += `<div class="hero-drug-chip${dk===activeDrug?' is-active':''}" onclick="setDrug('${dk}')">
+        <div class="hero-chip-label">${dd.short}</div>
+        <div class="hero-chip-zone">${dz.label.replace(' ⭐','')}</div>
+        <div class="hero-chip-meta">${delStr}${dz.power!=='—'?' &middot; '+dz.power:''}</div>
       </div>`;
     });
-    html += '</div>';
+    chipsHtml += '</div>';
+    html = `<div class="hero-card">${eyebrow}${mainHTML}${chipsHtml}`;
     // Wellbutrin + Remeron combo panel
     if (dosed.includes('wellbutrin') && dosed.includes('remeron')) {
       html += renderComboPanel(ST.doses.wellbutrin, ST.doses.remeron);
@@ -2971,17 +3076,11 @@ function renderNow() {
     if (dosed.includes('lamictal') && dosed.includes('lexapro')) {
       html += renderComboPanelLL();
     }
+    html += '</div>';
   }
 
   ban.style.display = 'block';
   ban.innerHTML = html;
-}
-
-function nowCardBg(z, d) {
-  if (z.peak)   return 'background:#fffacd;border-color:#f0c000;';
-  if (z.second) return 'background:#e8e8e8;border-color:#aaa;';
-  if (z.third)  return 'background:#ffe5cc;border-color:#e8a060;';
-  return `background:${d.light};border-color:${d.color};`;
 }
 
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
@@ -3084,34 +3183,33 @@ function renderTicks(dose,totalH,absolute) {
 function renderZones() {
   const d=DRUGS[activeDrug],v=ST.doses[activeDrug],out=document.getElementById('zonesOut');
   const {zones, adapted} = getEffectiveZones(activeDrug);
+  const guideLink = `<button class="es-link" style="margin-left:auto;" onclick="goPage('guide')">How zones work →</button>`;
 
   if(!v){
-    let h=`<div class="section-label">Zones — tap any to expand</div>`;
+    let h=`<div class="section-label" style="display:flex;align-items:center;">Zones — tap any to expand${guideLink}</div>`;
     h += adaptiveBannerHTML(activeDrug);
     zones.forEach(z=>{
       const uid='z'+Math.random().toString(36).slice(2);
-      const lbl=z.end===Infinity?`${z.start}+ hrs`:`${z.start}–${z.end} hrs`;
-      h+=zoneHTML(uid,`<strong>${lbl}</strong><span style="font-weight:200;"> — ${z.label}</span>`,z,false,adapted);
+      const rangeStr=z.end===Infinity?`${z.start}h+`:`${z.start}–${z.end}h`;
+      h+=zoneHTML(uid,z,false,adapted,rangeStr);
     });
     out.innerHTML=h; return;
   }
   const [hh,mm]=v.split(':').map(Number),dose=hh+mm/60;
   const elap=((nowH()-dose)%24+24)%24;
-  let h=`<div class="section-label">Your schedule today</div>`;
+  let h=`<div class="section-label" style="display:flex;align-items:center;">Your schedule today${guideLink}</div>`;
   h += adaptiveBannerHTML(activeDrug);
   zones.forEach(z=>{
     const uid='z'+Math.random().toString(36).slice(2);
     const s=dose+z.start,e=z.end===Infinity?null:dose+z.end;
     const tr=e?`${fmt(s)} – ${fmt(e)}`:`${fmt(s)} onward`;
     const isNow=elap>=z.start&&elap<(z.end===Infinity?9999:z.end);
-    h+=zoneHTML(uid,`<strong>${tr}</strong><span style="font-weight:200;"> — ${z.label}</span>`,z,isNow,adapted);
+    h+=zoneHTML(uid,z,isNow,adapted,tr);
   });
   out.innerHTML=h;
 }
 
-function zoneHTML(uid,titleHTML,z,isNow,adapted=false) {
-  const nowHdrExtra=isNow?'border-left-width:5px !important;':'';
-
+function zoneHTML(uid,z,isNow,adapted=false,rangeStr='') {
   // Determine if "yours" tab should exist and what the default view is
   const logCountForZone = (ST.logs||[]).filter(e=>e.drug===activeDrug&&e.zone===z.label).length;
   const hasYoursData = logCountForZone >= 1; // show tab even at 1, builds toward 3
@@ -3132,12 +3230,16 @@ function zoneHTML(uid,titleHTML,z,isNow,adapted=false) {
     <div class="zone-hdr" onclick="toggleZ('${uid}')">
       <span class="zone-dot-indicator" style="background:${zoneDotColor(z)}"></span>
       <div class="zone-hdr-main">
-        <div class="zone-title">${titleHTML}</div>
+        <div class="zone-title-row">
+          <span class="zone-name">${z.label.replace(' ⭐','')}</span>
+          ${isNow?`<span class="you-are-here">you are here</span>`:''}
+          ${adapted&&z.peak?`<span class="zone-calibrated-pill">👤 calibrated to your data</span>`:''}
+        </div>
+        ${z.tag?`<div class="zone-tagline-sub">${z.tag}</div>`:''}
         ${z.power!=='—'?`<div class="zone-sub">Effect level: ${z.power}</div>`:''}
-        ${isNow?`<div class="you-are-here">you are here</div>`:''}
-        ${adapted&&z.peak?`<div class="zone-calibrated-pill">👤 calibrated to your data</div>`:''}
         ${hasYoursData&&!isNow?`<div class="zone-log-count">👤 ${logCountForZone} log${logCountForZone===1?'':'s'}</div>`:''}
       </div>
+      ${rangeStr?`<div class="zone-range-right">${rangeStr}</div>`:''}
       <div id="${uid}_a" class="zone-arrow">▼</div>
     </div>
     <div id="${uid}" class="zone-body">
