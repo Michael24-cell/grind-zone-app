@@ -794,6 +794,81 @@ body.dark .guide-entry-title { color: #d09af0; }
 .guide-entry-sub { font-size: 0.8em; color: var(--ink-3); margin-top: 2px; }
 .guide-entry-arrow { font-size: 1.3em; color: var(--brand); flex-shrink: 0; }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLINICAL MONITORING LAYER — blue is reserved for prescriber-directed plans
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --clinical: #2563eb;
+  --clinical-hover: #1d4ed8;
+  --clinical-ink: #1e40af;
+  --clinical-soft: #eff6ff;
+  --clinical-line: #bfdbfe;
+}
+body.dark {
+  --clinical-ink: #93c5fd;
+  --clinical-soft: #172554;
+  --clinical-line: #1e3a8a;
+}
+.clinical-settings-card { border:1px solid var(--clinical-line); border-radius:var(--radius-lg); background:var(--surface); overflow:hidden; margin-bottom:12px; box-shadow:var(--shadow-card); }
+.clinical-settings-head { display:flex; align-items:flex-start; gap:11px; padding:15px 16px 12px; background:linear-gradient(135deg,var(--clinical-soft),var(--surface)); }
+.clinical-mark { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:var(--clinical); color:#fff; flex-shrink:0; }
+.clinical-mark svg { width:18px; height:18px; }
+.clinical-kicker { color:var(--clinical-ink); font-size:.68em; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.clinical-title { color:var(--ink); font-size:.96em; font-weight:700; margin-top:2px; }
+.clinical-sub { color:var(--ink-3); font-size:.79em; line-height:1.5; margin-top:3px; }
+.clinical-plan-body { padding:13px 16px 15px; border-top:1px solid var(--clinical-line); }
+.clinical-plan-meta { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 11px; }
+.clinical-chip { display:inline-flex; align-items:center; border:1px solid var(--clinical-line); border-radius:var(--radius-pill); padding:4px 9px; background:var(--clinical-soft); color:var(--clinical-ink); font-size:.74em; font-weight:600; }
+.clinical-share-list { margin:8px 0 12px; padding-left:18px; color:var(--ink-2); font-size:.82em; line-height:1.65; }
+.clinical-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.clinical-primary,.clinical-secondary { border-radius:10px; min-height:42px; padding:9px 15px; font-family:var(--font-ui); font-weight:700; cursor:pointer; }
+.clinical-primary { border:1px solid var(--clinical); background:var(--clinical); color:#fff; }
+.clinical-primary:hover { background:var(--clinical-hover); }
+.clinical-secondary { border:1px solid var(--clinical-line); background:var(--surface); color:var(--clinical-ink); }
+.clinical-primary:disabled,.clinical-secondary:disabled { opacity:.5; cursor:not-allowed; }
+.clinical-status { display:inline-flex; align-items:center; gap:6px; color:var(--clinical-ink); font-size:.76em; font-weight:700; }
+.clinical-status-dot { width:7px; height:7px; border-radius:50%; background:var(--clinical); }
+.clinical-history { color:var(--ink-3); font-size:.78em; padding:9px 16px; border-top:1px solid var(--line); }
+.clinical-log-stack { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.clinical-log-btn { width:100%; min-height:50px; border:1px solid var(--clinical); border-radius:var(--radius-md); background:var(--clinical-soft); color:var(--clinical-ink); font-family:var(--font-ui); font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 15px; text-align:left; }
+.clinical-log-btn:hover { box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+.clinical-log-btn small { display:block; color:var(--ink-3); font-weight:500; margin-top:2px; }
+.clinical-modal-bg { display:none; position:fixed; inset:0; z-index:410; background:rgba(15,23,42,.5); backdrop-filter:blur(3px); align-items:flex-end; justify-content:center; }
+.clinical-modal-bg.open { display:flex; }
+.clinical-modal { width:100%; max-width:640px; max-height:92vh; overflow:auto; background:var(--surface); border-radius:24px 24px 0 0; box-shadow:var(--shadow-modal); animation:slideup .22s ease; }
+.clinical-modal-head { position:sticky; top:0; z-index:2; padding:19px 20px 15px; background:var(--surface); border-bottom:1px solid var(--clinical-line); }
+.clinical-modal-headline { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.clinical-modal h3 { margin:2px 0 0; color:var(--ink); font-size:1.12em; }
+.clinical-close { border:0; background:var(--surface-2); color:var(--ink-2); width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.1em; }
+.clinical-modal-body { padding:17px 20px 30px; }
+.clinical-question { margin-bottom:18px; }
+.clinical-question-label { color:var(--ink); font-size:.88em; font-weight:700; margin-bottom:7px; }
+.clinical-question-hint { color:var(--ink-3); font-size:.75em; font-weight:400; margin-top:3px; }
+.clinical-choice-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.clinical-choice { border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-2); border-radius:11px; min-height:44px; font-family:var(--font-ui); font-weight:600; cursor:pointer; }
+.clinical-choice.sel { border-color:var(--clinical); background:var(--clinical-soft); color:var(--clinical-ink); box-shadow:inset 0 0 0 1px var(--clinical); }
+.clinical-time-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.clinical-time-field label { display:block; color:var(--ink-3); font-size:.72em; margin-bottom:5px; }
+.clinical-time-field input,.clinical-note { width:100%; border:1px solid var(--line-strong); border-radius:11px; background:var(--surface); color:var(--ink); padding:11px 12px; font-family:var(--font-ui); }
+.clinical-time-field input { font-family:var(--font-mono); }
+.clinical-time-field input:focus,.clinical-note:focus { outline:none; border-color:var(--clinical); box-shadow:0 0 0 4px rgba(37,99,235,.1); }
+.clinical-feel-scale { display:grid; grid-template-columns:repeat(10,1fr); gap:4px; }
+.clinical-feel { min-width:0; padding:10px 1px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-2); border-radius:8px; font-family:var(--font-mono); cursor:pointer; }
+.clinical-feel.sel { background:var(--clinical); border-color:var(--clinical); color:#fff; font-weight:700; }
+.clinical-side-effects { display:flex; flex-wrap:wrap; gap:7px; }
+.clinical-side-effect { border:1px solid var(--line); border-radius:var(--radius-pill); padding:7px 11px; background:var(--surface-2); color:var(--ink-2); font-family:var(--font-ui); font-size:.8em; cursor:pointer; }
+.clinical-side-effect.sel { border-color:var(--clinical); background:var(--clinical-soft); color:var(--clinical-ink); font-weight:700; }
+.clinical-save { width:100%; min-height:48px; border:0; border-radius:12px; background:var(--clinical); color:#fff; font-family:var(--font-ui); font-size:.95em; font-weight:700; cursor:pointer; }
+.clinical-save:hover { background:var(--clinical-hover); }
+body.dark .clinical-settings-card,body.dark .clinical-modal { box-shadow:none; }
+body.dark .clinical-modal-head { background:var(--surface); }
+@media (max-width:420px) {
+  .clinical-time-grid { grid-template-columns:1fr; }
+  .clinical-feel-scale { grid-template-columns:repeat(5,1fr); }
+  .clinical-modal-body { padding-left:16px; padding-right:16px; }
+}
+@media (prefers-reduced-motion:reduce) { .clinical-modal { animation:none; } }
+
 </style>
 
 </head>
@@ -891,6 +966,56 @@ body.dark .guide-entry-title { color: #d09af0; }
 
     <button class="save-log-btn" id="saveLogBtn" onclick="saveLog()">Save entry</button>
     <button class="cancel-log-btn" onclick="closeLogModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- CLINICAL CHECK-IN (used only for an accepted monitoring plan) -->
+<div class="clinical-modal-bg" id="clinicalModalBg" onclick="closeClinicalCheckin(event)">
+  <div class="clinical-modal" role="dialog" aria-modal="true" aria-labelledby="clinicalModalTitle">
+    <div class="clinical-modal-head">
+      <div class="clinical-modal-headline">
+        <div>
+          <div class="clinical-kicker">Clinical monitoring</div>
+          <h3 id="clinicalModalTitle">Medication check-in</h3>
+          <div class="clinical-sub" id="clinicalModalContext"></div>
+        </div>
+        <button class="clinical-close" onclick="closeClinicalCheckin()" aria-label="Close">×</button>
+      </div>
+    </div>
+    <div class="clinical-modal-body">
+      <div class="clinical-question">
+        <div class="clinical-question-label">Did you take this medication today?</div>
+        <div class="clinical-choice-row" id="clinicalTakenChoices">
+          <button class="clinical-choice sel" type="button" onclick="setClinicalTaken(true)">Yes</button>
+          <button class="clinical-choice" type="button" onclick="setClinicalTaken(false)">No</button>
+        </div>
+      </div>
+      <div id="clinicalTimingQuestions">
+        <div class="clinical-question">
+          <div class="clinical-question-label">Today’s timing</div>
+          <div class="clinical-time-grid">
+            <div class="clinical-time-field"><label for="clinicalDoseTime">Time taken</label><input type="time" id="clinicalDoseTime"></div>
+            <div class="clinical-time-field"><label for="clinicalKickIn">Started working</label><input type="time" id="clinicalKickIn"></div>
+            <div class="clinical-time-field"><label for="clinicalFade">Benefit faded</label><input type="time" id="clinicalFade"></div>
+          </div>
+          <div class="clinical-question-hint">Leave a time blank if you didn’t notice it.</div>
+        </div>
+      </div>
+      <div class="clinical-question">
+        <div class="clinical-question-label">Overall, how did you feel today? <span class="clinical-question-hint">1 = very difficult, 10 = very good</span></div>
+        <div class="clinical-feel-scale" id="clinicalFeelScale"></div>
+      </div>
+      <div class="clinical-question">
+        <div class="clinical-question-label">Side effects today</div>
+        <div class="clinical-side-effects" id="clinicalSideEffects"></div>
+        <div class="clinical-question-hint" id="clinicalSideEffectsHint">Choose “None reported” or select any that apply. You can also leave this unanswered.</div>
+      </div>
+      <div class="clinical-question">
+        <div class="clinical-question-label">Anything else? <span class="clinical-question-hint">Optional</span></div>
+        <textarea class="clinical-note" id="clinicalNote" rows="3" placeholder="Add context for your prescriber…"></textarea>
+      </div>
+      <button class="clinical-save" id="clinicalSaveBtn" onclick="saveClinicalCheckin()">Save clinical check-in</button>
+    </div>
   </div>
 </div>
 
@@ -1151,6 +1276,13 @@ body.dark .guide-entry-title { color: #d09af0; }
     <div id="settingsAccountSection"></div>
 
     <div class="settings-section">
+      <div class="settings-section-title">Clinical monitoring</div>
+      <div id="monitoringPlanSection">
+        <div class="gz-loading"><div class="gz-spinner"></div>Checking for plans…</div>
+      </div>
+    </div>
+
+    <div class="settings-section">
       <div class="settings-section-title">Appearance</div>
       <div class="settings-row">
         <div>
@@ -1239,6 +1371,15 @@ body.dark .guide-entry-title { color: #d09af0; }
 const DRUGS = {
   ritalin: {
     name:'Ritalin LA', short:'Ritalin', cls:'r', color:'#c070e8', light:'#fdeeff',
+    // pkReference: published PK data — update only with citation
+    // Ritalin LA: bimodal release, two peaks ~1h and ~4.5h, total 6-8h
+    //   coverage (Tmax per Novartis labeling and Swanson 2004)
+    pkReference: {
+      onset_hours: 1,
+      coverage_hours: { min: 4, max: 6 },
+      peak_start_hours: 1.5,
+      peak_end_hours: 3.5
+    },
     rev:[
       {lbl:'Want First Peak at:', off:1.5, desc:'First Peak', id:'rv-r1'},
       {lbl:'Want Second Peak at:', off:5, desc:'Second Peak', id:'rv-r2'}
@@ -1262,6 +1403,17 @@ const DRUGS = {
   },
   wellbutrin: {
     name:'Wellbutrin XL', short:'Wellbutrin', cls:'w', color:'#5577d4', light:'#eef1ff',
+    // pkReference: published PK data — update only with citation
+    // Wellbutrin XL: Tmax ~5h, hydroxybupropion Tmax ~7h
+    // Half-life ~21h (hydroxybupropion AUC 16x parent compound)
+    // Coverage reflects steady-state duration, not acute onset feel
+    // Source: GlaxoSmithKline prescribing information
+    pkReference: {
+      onset_hours: 1.5,
+      coverage_hours: { min: 20, max: 24 },
+      peak_start_hours: 3,
+      peak_end_hours: 8
+    },
     rev:[{lbl:'Want peak at:', off:6, desc:'Peak Zone', id:'rv-w1'}],
     doses: [
       {mg:150, label:'150mg', note:'Starting dose — first 1–2 weeks, or long-term if effective'},
@@ -1316,6 +1468,17 @@ const DRUGS = {
   },
   lamictal: {
     name:'Lamictal 50mg', short:'Lamictal', cls:'l', color:'#40b070', light:'#eefff4',
+    // pkReference: published PK data — update only with citation
+    // Lamictal: Tmax 1.4-4.8h, half-life 22-37h (Tanner 1994)
+    // 98% bioavailability. Effects are cumulative over weeks —
+    // pkReference reflects plasma level timing only, NOT therapeutic onset
+    // Analytics layer must note this caveat when displaying comparisons
+    pkReference: {
+      onset_hours: 2,
+      coverage_hours: { min: 20, max: 24 },
+      peak_start_hours: 2,
+      peak_end_hours: 6
+    },
     rev:[{lbl:'Want peak concentration at:', off:2, desc:'peak concentration', id:'rv-l1'}],
     doses: [
       {mg:25,  label:'25mg',  note:'Starting titration — sub-therapeutic, building tolerance'},
@@ -1400,6 +1563,19 @@ const DRUGS = {
 
   ,concerta: {
     name:'Concerta 27mg', short:'Concerta', cls:'c', color:'#e07030', light:'#fff3ee',
+    // pkReference: published PK data — update only with citation
+    // Concerta OROS: Tmax 6.8 ± 1.8h per FDA label (ALZA studies)
+    // Coverage windows per prescribing information and Swanson 2003
+    pkReferenceByDose: {
+      18: { onset_hours: 1.5, coverage_hours: { min: 6, max: 8 },
+            peak_start_hours: 3, peak_end_hours: 6 },
+      27: { onset_hours: 1.5, coverage_hours: { min: 8, max: 10 },
+            peak_start_hours: 3, peak_end_hours: 7 },
+      36: { onset_hours: 1.5, coverage_hours: { min: 10, max: 12 },
+            peak_start_hours: 3, peak_end_hours: 8 },
+      54: { onset_hours: 1.5, coverage_hours: { min: 10, max: 12 },
+            peak_start_hours: 3, peak_end_hours: 8 }
+    },
     rev:[{lbl:'Want peak at:', off:7, desc:'Peak Zone', id:'rv-c1'}],
     zones:[
       {start:0, end:1, label:"IR Overcoat", power:"2–3 / 10", tl:'#f5d8c0',
@@ -1471,6 +1647,18 @@ const DRUGS = {
   }
   ,remeron: {
     name:'Remeron 7.5mg', short:'Remeron', cls:'rm', color:'#2080c0', light:'#eef5ff',
+    // pkReference: published PK data — update only with citation
+    // Remeron: Tmax ~2h, half-life female ~37h / male ~26h
+    // pkReference uses average values — sex-adjusted half-life is already
+    // modeled separately in the app. Analytics must note sex-adjustment
+    // caveat when displaying Remeron coverage comparisons.
+    // Source: Organon prescribing information, Timmer 1996
+    pkReference: {
+      onset_hours: 1.5,
+      coverage_hours: { min: 20, max: 24 },
+      peak_start_hours: 1.5,
+      peak_end_hours: 4
+    },
     rev:[{lbl:'Want asleep by:', off:0.75, desc:'Peak Sedation', id:'rv-rm1'}],
     zones:[
       {start:0, end:0.75, label:"Onset", power:"2–4 / 10", tl:'#b8d8f0',
@@ -1532,6 +1720,17 @@ const DRUGS = {
   }
   ,lexapro: {
     name:'Lexapro 10mg', short:'Lexapro', cls:'lx', color:'#d06820', light:'#fff4ec',
+    // pkReference: published PK data — update only with citation
+    // Lexapro: Tmax 4-5h per FDA label (Forest Laboratories)
+    // onset_hours set to 4 to match plasma Tmax — NOT subjective onset
+    // which is cumulative over days to weeks. Analytics must note this.
+    // Coverage reflects plasma half-life window (~27-32h), not acute effect
+    pkReference: {
+      onset_hours: 4,
+      coverage_hours: { min: 20, max: 24 },
+      peak_start_hours: 4,
+      peak_end_hours: 8
+    },
     rev:[{lbl:'Target steady state at:', off:5, desc:'Plasma peak', id:'rv-lx1'}],
     doses:[
       {mg:5,  label:'5mg',  note:'Starting dose or long-term maintenance for sensitive individuals — ~65-70% SERT occupancy'},
@@ -1708,6 +1907,16 @@ function save() { try { localStorage.setItem('gz2', JSON.stringify(ST)); } catch
 
 let ST = loadState();
 
+// Clinical monitoring state is remote-only. Guests never load or write it.
+let monitoringPlans = [];
+let clinicalPlanId = null;
+let clinicalTaken = true;
+let clinicalFeel = null;
+let clinicalSideEffects = [];
+let clinicalSideEffectsAnswered = false;
+const DEFAULT_CLINICAL_SIDE_EFFECTS = ['Reduced appetite','Trouble sleeping','Headache','Dry mouth','Irritability','Anxiety','Nausea'];
+const MEDICATION_SYNC_NAMES = { ritalin:'Ritalin LA', wellbutrin:'Wellbutrin XL', lamictal:'Lamictal', concerta:'Concerta', remeron:'Remeron', lexapro:'Lexapro' };
+
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 async function init() {
   if (ST.dark) document.body.classList.add('dark');
@@ -1750,6 +1959,9 @@ function launchApp() {
   buildTabs();
   setDrug(ST.active[0] || 'ritalin');
   startTicker();
+  // Remote clinical data is deliberately non-blocking; the patient app remains
+  // fully usable if the migration is not installed or the network is offline.
+  if (currentUser) loadClinicalLayer().catch(e => console.warn('Clinical layer unavailable:', e));
   if (!localStorage.getItem('hasSeenOnboarding') && ST.active.length === 0) {
     buildOnboardingGrid();
     goPage('onboarding');
@@ -2004,6 +2216,276 @@ async function unlinkProvider(linkId) {
   renderProviderLinkSection();
 }
 
+// ─── CLINICAL MONITORING (patient side) ──────────────────────────────────────
+function scheduleMedicationSync() {
+  if (!currentUser) return;
+  setTimeout(() => syncPatientMedications().catch(() => {}), 0);
+}
+
+async function syncPatientMedications() {
+  if (!currentUser) return;
+  try {
+    const rows = ALL.map(k => ({
+      user_id: currentUser.id,
+      drug_key: k,
+      drug_name: MEDICATION_SYNC_NAMES[k] || DRUGS[k].name,
+      dose_mg: ST.active.includes(k) ? getDoseForDrug(k) : null,
+      active: ST.active.includes(k),
+      updated_at: new Date().toISOString()
+    }));
+    const { error } = await supa.from('patient_medications').upsert(rows, { onConflict:'user_id,drug_key' });
+    if (error) console.warn('Medication sync unavailable:', error.message);
+  } catch (e) {
+    // Silent by design: medication selection must never wait on the network.
+  }
+}
+
+async function loadClinicalLayer() {
+  if (!currentUser) { monitoringPlans = []; renderMonitoringPlans(); return; }
+  scheduleMedicationSync();
+  const { data, error } = await supa.from('monitoring_plans')
+    .select('*')
+    .eq('patient_user_id', currentUser.id)
+    .order('created_at', { ascending:false });
+  if (error) {
+    console.warn('Monitoring plans unavailable:', error.message);
+    renderMonitoringPlans(true);
+    return;
+  }
+  monitoringPlans = data || [];
+  const today = localDateKey();
+  const expired = monitoringPlans.filter(p => p.status === 'active' && p.end_date && p.end_date < today);
+  if (expired.length) {
+    expired.forEach(p => { p.status = 'completed'; });
+    Promise.all(expired.map(p => supa.from('monitoring_plans').update({ status:'completed', updated_at:new Date().toISOString() }).eq('id',p.id).eq('patient_user_id',currentUser.id)))
+      .catch(() => {});
+  }
+  renderMonitoringPlans();
+  renderLogBtn();
+}
+
+function planDrugName(plan) {
+  return plan.drug_name || DRUGS[plan.drug_key]?.name || plan.drug_key || 'Medication';
+}
+
+function getActivePlanForDrug(drugKey) {
+  return monitoringPlans.find(p => p.status === 'active' && p.drug_key === drugKey) || null;
+}
+
+function activeMonitoringPlans() {
+  return monitoringPlans.filter(p => p.status === 'active');
+}
+
+function renderMonitoringPlans(loadFailed) {
+  const el = document.getElementById('monitoringPlanSection');
+  if (!el) return;
+  if (!currentUser) {
+    el.innerHTML = '<p style="font-size:.86em;color:var(--ink-3);margin:0;line-height:1.55;">Sign in to receive and review monitoring plans from a linked prescriber.</p>';
+    return;
+  }
+  if (loadFailed) {
+    el.innerHTML = '<p style="font-size:.86em;color:var(--ink-3);margin:0;line-height:1.55;">Plans could not be checked right now. Your regular logging still works.</p>';
+    return;
+  }
+  if (!monitoringPlans.length) {
+    el.innerHTML = `<div class="clinical-settings-card"><div class="clinical-settings-head">
+      <div class="clinical-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18"/></svg></div>
+      <div><div class="clinical-kicker">Prescriber-directed</div><div class="clinical-title">No monitoring plans</div><div class="clinical-sub">If your clinician sends a plan, you’ll review exactly what is shared before it starts.</div></div>
+    </div></div>`;
+    return;
+  }
+  const priority = {pending:0,active:1,completed:2,closed:3,declined:4};
+  const plans = [...monitoringPlans].sort((a,b)=>(priority[a.status]??9)-(priority[b.status]??9));
+  el.innerHTML = plans.map(p => monitoringPlanHTML(p)).join('');
+}
+
+function monitoringPlanHTML(p) {
+  const dose = p.dose_mg != null ? `${p.dose_mg} mg` : 'Dose not specified';
+  const symptoms = (p.symptoms || []).join(', ') || 'overall response';
+  const effects = (p.side_effects || []).join(', ') || DEFAULT_CLINICAL_SIDE_EFFECTS.slice(0,4).join(', ');
+  if (p.status === 'pending') {
+    return `<div class="clinical-settings-card">
+      <div class="clinical-settings-head"><div class="clinical-mark">+</div><div><div class="clinical-kicker">New monitoring plan</div><div class="clinical-title">${escHtml(planDrugName(p))} · ${escHtml(dose)}</div><div class="clinical-sub">Review what your prescriber is asking you to track.</div></div></div>
+      <div class="clinical-plan-body">
+        <div class="clinical-plan-meta"><span class="clinical-chip">${p.duration_days || 14} days</span><span class="clinical-chip">Starts ${escHtml(p.treatment_change_date || 'when accepted')}</span>${p.follow_up_date?`<span class="clinical-chip">Follow-up ${escHtml(p.follow_up_date)}</span>`:''}</div>
+        <div class="clinical-title" style="font-size:.84em;">What will be shared</div>
+        <ul class="clinical-share-list"><li>Whether and when you took ${escHtml(planDrugName(p))}</li><li>When benefit started and faded</li><li>Your 1–10 feel score, selected side effects, and optional note</li><li>Symptoms to track: ${escHtml(symptoms)}</li><li>Side effects to watch: ${escHtml(effects)}</li></ul>
+        <div class="clinical-actions"><button class="clinical-primary" onclick="respondToMonitoringPlan('${p.id}','active')">Accept plan</button><button class="clinical-secondary" onclick="respondToMonitoringPlan('${p.id}','declined')">Decline</button></div>
+      </div></div>`;
+  }
+  if (p.status === 'active') {
+    const today = localDateKey();
+    const start = p.treatment_change_date || today;
+    const elapsed = Math.max(1, Math.floor((localDateFromKey(today)-localDateFromKey(start))/864e5)+1);
+    return `<div class="clinical-settings-card"><div class="clinical-settings-head"><div class="clinical-mark">✓</div><div><div class="clinical-status"><span class="clinical-status-dot"></span>Active · day ${Math.min(elapsed,p.duration_days||14)} of ${p.duration_days||14}</div><div class="clinical-title">${escHtml(planDrugName(p))} · ${escHtml(dose)}</div><div class="clinical-sub">Use the blue clinical check-in once each day. Your regular Grind-Zone zones remain unchanged.</div></div></div>
+      <div class="clinical-plan-body"><div class="clinical-plan-meta">${p.follow_up_date?`<span class="clinical-chip">Follow-up ${escHtml(p.follow_up_date)}</span>`:''}<span class="clinical-chip">Ends ${escHtml(p.end_date || addLocalDays(start,(p.duration_days||14)-1))}</span></div><div class="clinical-actions"><button class="clinical-primary" onclick="openClinicalCheckin('${p.id}')">Complete today’s check-in</button><button class="clinical-secondary" onclick="withdrawMonitoringPlan('${p.id}')">Stop sharing this plan</button></div></div></div>`;
+  }
+  return `<div class="clinical-settings-card"><div class="clinical-settings-head"><div class="clinical-mark" style="background:var(--ink-3);">·</div><div><div class="clinical-kicker">${escHtml(p.status)}</div><div class="clinical-title">${escHtml(planDrugName(p))} · ${escHtml(dose)}</div><div class="clinical-sub">This plan is no longer collecting clinical check-ins.</div></div></div></div>`;
+}
+
+async function respondToMonitoringPlan(id, status) {
+  if (!currentUser || !['active','declined'].includes(status)) return;
+  const plan = monitoringPlans.find(p => p.id === id);
+  if (!plan) return;
+  const btns = document.querySelectorAll(`[onclick*="${id}"]`);
+  btns.forEach(b => b.disabled = true);
+  const today = localDateKey();
+  const patientTimezone = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (_) { return null; } })();
+  const patch = {
+    status,
+    patient_response_at:new Date().toISOString(),
+    accepted_at:status === 'active' ? new Date().toISOString() : (plan.accepted_at || null),
+    patient_timezone:status === 'active' ? patientTimezone : (plan.patient_timezone || null),
+    patient_utc_offset_minutes:status === 'active' ? -new Date().getTimezoneOffset() : (plan.patient_utc_offset_minutes ?? null),
+    end_date:status === 'active' ? addLocalDays(plan.treatment_change_date || today, (plan.duration_days || 14) - 1) : plan.end_date,
+    updated_at:new Date().toISOString()
+  };
+  const { error } = await supa.from('monitoring_plans').update(patch).eq('id',id).eq('patient_user_id',currentUser.id);
+  if (error) {
+    showToast('Could not update the plan — try again', 'error');
+    btns.forEach(b => b.disabled = false);
+    return;
+  }
+  Object.assign(plan, patch);
+  renderMonitoringPlans(); renderLogBtn();
+  showToast(status === 'active' ? 'Monitoring plan accepted' : 'Monitoring plan declined', 'success');
+}
+
+function withdrawMonitoringPlan(id) {
+  if (!confirm('Stop this monitoring plan? Your prescriber will see it as declined, and no new clinical check-ins will be requested.')) return;
+  respondToMonitoringPlan(id,'declined');
+}
+
+function setClinicalTaken(value) {
+  clinicalTaken = !!value;
+  const buttons = document.querySelectorAll('#clinicalTakenChoices .clinical-choice');
+  buttons.forEach((b,i) => b.classList.toggle('sel', i === (clinicalTaken ? 0 : 1)));
+  const timing = document.getElementById('clinicalTimingQuestions');
+  if (timing) timing.style.display = clinicalTaken ? 'block' : 'none';
+}
+
+function openClinicalCheckin(id) {
+  const plan = monitoringPlans.find(p => p.id === id && p.status === 'active');
+  if (!plan) { showToast('This monitoring plan is not active', 'error'); return; }
+  clinicalPlanId = id; clinicalTaken = true; clinicalFeel = null; clinicalSideEffects = []; clinicalSideEffectsAnswered = false;
+  document.getElementById('clinicalModalTitle').textContent = `${planDrugName(plan)} check-in`;
+  document.getElementById('clinicalModalContext').textContent = `Day-by-day monitoring · ${plan.dose_mg != null ? plan.dose_mg + ' mg' : 'dose not specified'}`;
+  document.getElementById('clinicalDoseTime').value = ST.doses[plan.drug_key] || '';
+  document.getElementById('clinicalKickIn').value = '';
+  document.getElementById('clinicalFade').value = '';
+  document.getElementById('clinicalNote').value = '';
+  setClinicalTaken(true);
+  const scale = document.getElementById('clinicalFeelScale');
+  scale.innerHTML = Array.from({length:10},(_,i)=>`<button type="button" class="clinical-feel" onclick="selectClinicalFeel(${i+1},this)">${i+1}</button>`).join('');
+  const effects = (plan.side_effects && plan.side_effects.length ? plan.side_effects : DEFAULT_CLINICAL_SIDE_EFFECTS);
+  document.getElementById('clinicalSideEffects').innerHTML = `<button type="button" class="clinical-side-effect" id="clinicalNoSideEffects" onclick="setClinicalNoSideEffects(this)">None reported</button>` + effects.map(s=>`<button type="button" class="clinical-side-effect" onclick="toggleClinicalSideEffect(${JSON.stringify(s).replace(/"/g,'&quot;')},this)">${escHtml(s)}</button>`).join('');
+  document.getElementById('clinicalSideEffectsHint').textContent = 'Choose “None reported” or select any that apply. You can also leave this unanswered.';
+  document.getElementById('clinicalSaveBtn').disabled = false;
+  document.getElementById('clinicalModalBg').classList.add('open');
+}
+
+function selectClinicalFeel(value, el) {
+  clinicalFeel = value;
+  document.querySelectorAll('.clinical-feel').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function toggleClinicalSideEffect(effect, el) {
+  clinicalSideEffectsAnswered = true;
+  document.getElementById('clinicalNoSideEffects')?.classList.remove('sel');
+  if (clinicalSideEffects.includes(effect)) clinicalSideEffects = clinicalSideEffects.filter(x=>x!==effect);
+  else clinicalSideEffects.push(effect);
+  if (!clinicalSideEffects.length) clinicalSideEffectsAnswered = false;
+  el.classList.toggle('sel', clinicalSideEffects.includes(effect));
+  document.getElementById('clinicalSideEffectsHint').textContent = clinicalSideEffects.length ? 'Side-effect question answered.' : 'No effect is selected. Choose “None reported” to record an explicit none response.';
+}
+
+function setClinicalNoSideEffects(el) {
+  clinicalSideEffectsAnswered = true;
+  clinicalSideEffects = [];
+  document.querySelectorAll('#clinicalSideEffects .clinical-side-effect').forEach(button => button.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('clinicalSideEffectsHint').textContent = 'Answered: none reported.';
+}
+
+function closeClinicalCheckin(e) {
+  const bg = document.getElementById('clinicalModalBg');
+  if (!e || e.target === bg) bg.classList.remove('open');
+}
+
+async function saveClinicalCheckin() {
+  const plan = monitoringPlans.find(p => p.id === clinicalPlanId && p.status === 'active');
+  if (!plan) return;
+  if (!clinicalFeel) { showToast('Choose an overall feel score', 'error'); return; }
+  const doseTime = clinicalTaken ? document.getElementById('clinicalDoseTime').value : '';
+  if (clinicalTaken && !doseTime) { showToast('Enter the time you took the medication', 'error'); return; }
+  const kickIn = clinicalTaken ? document.getElementById('clinicalKickIn').value || null : null;
+  const faded = clinicalTaken ? document.getElementById('clinicalFade').value || null : null;
+  const note = document.getElementById('clinicalNote').value.trim();
+  const logTime = currentTimeStr();
+  let elapsedH = null, zoneName = 'Clinical check-in';
+  if (clinicalTaken && doseTime && DRUGS[plan.drug_key]) {
+    const [dh,dm] = doseTime.split(':').map(Number), [lh,lm] = logTime.split(':').map(Number);
+    elapsedH = (((lh+lm/60)-(dh+dm/60))%24+24)%24;
+    zoneName = getZone(dh+dm/60, getEffectiveZones(plan.drug_key).zones, elapsedH).label;
+    ST.doses[plan.drug_key] = doseTime;
+    ST.lastDoseDay = todayKey();
+  }
+  const submittedAt = new Date();
+  const occurredAt = new Date(submittedAt);
+  const patientLogicalDay = todayKey(occurredAt);
+  const patientTimezone = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (_) { return null; } })();
+  const utcOffsetMinutes = -occurredAt.getTimezoneOffset();
+  const doseOccurredAt = clinicalTaken ? clinicalLocalEventIso(patientLogicalDay, doseTime) : null;
+  const onsetOccurredAt = clinicalTaken && kickIn ? clinicalLocalEventIso(patientLogicalDay, kickIn, doseOccurredAt) : null;
+  const wearoffOccurredAt = clinicalTaken && faded ? clinicalLocalEventIso(patientLogicalDay, faded, doseOccurredAt) : null;
+  const entry = {
+    id:Date.now(), drug:plan.drug_key, dose:plan.dose_mg ?? getDoseForDrug(plan.drug_key), feel:clinicalFeel,
+    tags:[...clinicalSideEffects], note, time:logTime, doseTime:doseTime || null, elapsedH, zone:zoneName,
+    ts:occurredAt.toISOString(), monitoringPlanId:plan.id, tookMedication:clinicalTaken,
+    noticedWorkingAt:kickIn, benefitFadedAt:faded, sideEffects:[...clinicalSideEffects],
+    patientLogicalDay, occurredAt:occurredAt.toISOString(), submittedAt:submittedAt.toISOString(),
+    patientTimezone, utcOffsetMinutes, clinicalSideEffectsAnswered, doseOccurredAt, onsetOccurredAt, wearoffOccurredAt
+  };
+  const btn = document.getElementById('clinicalSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  if (!ST.logs) ST.logs = [];
+  ST.logs.unshift(entry); save();
+  const { error } = await supa.from('logs').insert({
+    user_id:currentUser.id, drug:entry.drug, dose_mg:entry.dose, feel:entry.feel, tags:entry.tags,
+    note:entry.note || null, time:entry.time, dose_time:entry.doseTime, elapsed_h:entry.elapsedH,
+    zone:entry.zone, ts:entry.ts, monitoring_plan_id:plan.id, took_medication:clinicalTaken,
+    noticed_working_at:kickIn, benefit_faded_at:faded, side_effects:entry.sideEffects,
+    patient_logical_day:patientLogicalDay, occurred_at:entry.occurredAt, submitted_at:entry.submittedAt,
+    patient_timezone:patientTimezone, utc_offset_minutes:utcOffsetMinutes,
+    clinical_side_effects_answered:clinicalSideEffectsAnswered, dose_occurred_at:doseOccurredAt,
+    onset_occurred_at:onsetOccurredAt, wearoff_occurred_at:wearoffOccurredAt
+  });
+  closeClinicalCheckin();
+  renderAll();
+  if (error) { console.warn('Clinical check-in sync failed:', error.message); showToast('Saved locally — clinical sync failed', 'error'); }
+  else showToast('Clinical check-in saved', 'success');
+  btn.textContent = 'Save clinical check-in';
+}
+
+// Convert a patient logical day plus a local clock value into a full instant.
+// Grind-Zone's day changes at 3am; an after-midnight clock value therefore
+// belongs to the following calendar date. Relative events roll forward once
+// when their clock is earlier than the dose anchor clock.
+function clinicalLocalEventIso(logicalDay, time, anchorIso) {
+  if (!logicalDay || !time) return null;
+  const [year,month,day] = logicalDay.split('-').map(Number);
+  const [hour,minute] = time.split(':').map(Number);
+  if (![year,month,day,hour,minute].every(Number.isFinite)) return null;
+  const value = new Date(year,month-1,day,hour,minute,0,0);
+  if (!anchorIso && hour < 3) value.setDate(value.getDate()+1);
+  if (anchorIso) {
+    const anchor = new Date(anchorIso);
+    if (!Number.isNaN(anchor.getTime()) && value < anchor && (hour < 3 || anchor.getHours() >= 18)) value.setDate(value.getDate()+1);
+  }
+  return value.toISOString();
+}
+
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 let _pendingEmail = '';
 
@@ -2073,7 +2555,7 @@ function backToEmail() {
 function goPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  if(id==='readme') { genShareUrl(); renderSettingsAccount(); updateDarkSwitch(); updatePrescriberExportRow(); renderProviderLinkSection(); }
+  if(id==='readme') { genShareUrl(); renderSettingsAccount(); updateDarkSwitch(); updatePrescriberExportRow(); renderProviderLinkSection(); renderMonitoringPlans(); }
   if(id==='curve') renderCurvePage();
   if(id==='log') {
     logDrug=activeDrug; calSelectedDate=null; buildLogTabs(); renderLogStats(); renderLogList(); updateLogPageBtn();
@@ -2240,6 +2722,7 @@ function finishOnboarding() {
     save();
   }
   localStorage.setItem('hasSeenOnboarding', 'true');
+  scheduleMedicationSync();
   goPage('main');
 }
 
@@ -2265,6 +2748,7 @@ function toggleDrugSel(k) {
   if(idx>=0) { if(ST.active.length===1) return; ST.active.splice(idx,1); }
   else ST.active.push(k);
   save(); buildGrid(); buildTabs();
+  scheduleMedicationSync();
   if(!ST.active.includes(activeDrug)) setDrug(ST.active[0]);
   else renderAll();
 }
@@ -2415,6 +2899,7 @@ function setDose(key, mg) {
   if (key === 'wellbutrinDose') DRUGS.wellbutrin.name = 'Wellbutrin XL ' + mg + 'mg';
   if (key === 'lexaproDose') DRUGS.lexapro.name = 'Lexapro ' + mg + 'mg';
   save();
+  scheduleMedicationSync();
   buildTabs();     // re-render tab labels
   renderInput();   // re-render dose buttons
   renderAll();     // re-render zones
@@ -2461,7 +2946,23 @@ function appDay(date) {
   const d = date ? new Date(date) : new Date();
   // If it's before 3am, it belongs to the previous calendar day
   if (d.getHours() < 3) d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  return localDateKey(d);
+}
+
+function localDateKey(date) {
+  const d = date ? new Date(date) : new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function localDateFromKey(key) {
+  const [y,m,d] = String(key || '').split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 12, 0, 0, 0);
+}
+
+function addLocalDays(key, days) {
+  const d = localDateFromKey(key);
+  d.setDate(d.getDate() + Number(days || 0));
+  return localDateKey(d);
 }
 
 // Same as appDay() but returns today's logical day key
@@ -3233,6 +3734,8 @@ function updateLogPageBtn() {
 }
 
 function openLogModal() {
+  const clinicalPlan = getActivePlanForDrug(activeDrug);
+  if (clinicalPlan) { openClinicalCheckin(clinicalPlan.id); return; }
   const d = DRUGS[activeDrug];
   const v = ST.doses[activeDrug];
   selFeel = null; selTags = [];
@@ -3320,10 +3823,10 @@ function closeLogModal(e) {
 }
 
 function getDoseForDrug(drugKey) {
-  // Returns the active mg dose for drugs with dose selectors, null otherwise
-  if (drugKey === 'wellbutrin') return ST.wellbutrinDose || 300;
-  if (drugKey === 'lamictal')   return ST.lamictalDose   || 50;
-  if (drugKey === 'lexapro')    return ST.lexaproDose    || 10;
+  // Never infer a clinical dose. Null means the patient has not selected one.
+  if (drugKey === 'wellbutrin') return ST.wellbutrinDose || null;
+  if (drugKey === 'lamictal')   return ST.lamictalDose   || null;
+  if (drugKey === 'lexapro')    return ST.lexaproDose    || null;
   return null;
 }
 
@@ -3432,6 +3935,13 @@ function saveLog() {
 function renderLogBtn() {
   const wrap = document.getElementById('logBtnWrap');
   if (!wrap) return;
+  const plans = activeMonitoringPlans();
+  if (plans.length) {
+    const d = DRUGS[activeDrug];
+    const standard = getActivePlanForDrug(activeDrug) ? '' : `<button class="log-btn" style="background:${d.light};color:${d.color};border:1px solid ${d.color};margin-bottom:0;" onclick="openLogModal()">+ Log how I feel right now</button>`;
+    wrap.innerHTML = `<div class="clinical-log-stack">${plans.map(p=>`<button class="clinical-log-btn" onclick="openClinicalCheckin('${p.id}')"><span><span>${escHtml(planDrugName(p))} clinical check-in</span><small>Prescriber monitoring · about 20 seconds</small></span><span>→</span></button>`).join('')}${standard}</div>`;
+    return;
+  }
   const d = DRUGS[activeDrug];
   wrap.innerHTML = `<button class="log-btn" style="background:${d.light};color:${d.color};border:1px solid ${d.color};" onclick="openLogModal()">+ Log how I feel right now</button>`;
 }
@@ -3514,7 +4024,21 @@ async function fetchLogsFromSupabase() {
     doseTime: r.dose_time,
     elapsedH: r.elapsed_h,
     zone: r.zone,
-    ts: r.ts
+    ts: r.ts,
+    monitoringPlanId: r.monitoring_plan_id || null,
+    tookMedication: r.took_medication,
+    noticedWorkingAt: r.noticed_working_at || null,
+    benefitFadedAt: r.benefit_faded_at || null,
+    sideEffects: r.side_effects || [],
+    patientLogicalDay: r.patient_logical_day || null,
+    occurredAt: r.occurred_at || null,
+    submittedAt: r.submitted_at || null,
+    patientTimezone: r.patient_timezone || null,
+    utcOffsetMinutes: r.utc_offset_minutes ?? null,
+    clinicalSideEffectsAnswered: r.clinical_side_effects_answered ?? null,
+    doseOccurredAt: r.dose_occurred_at || null,
+    onsetOccurredAt: r.onset_occurred_at || null,
+    wearoffOccurredAt: r.wearoff_occurred_at || null
   }));
   save();
   renderLogStats();

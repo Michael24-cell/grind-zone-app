@@ -6,6 +6,8 @@
 <title>Grind-Zone Provider Portal</title>
 <link rel="icon" type="image/png" href="/logo-favicon.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="clinical-metrics.js"></script>
+<script src="provider-insights.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 :root {
@@ -22,6 +24,11 @@
   --ink-3:       #8a8f9e;
   --good:        #2a7d46;
   --warn:        #b03030;
+  --clinical:    #2563eb;
+  --clinical-hover:#1d4ed8;
+  --clinical-soft:#eff6ff;
+  --clinical-line:#bfdbfe;
+  --clinical-ink:#1e40af;
   --shadow-card: 0 1px 0 rgba(28,30,38,.02), 0 4px 14px -8px rgba(108,82,176,.16);
   --font-ui:     'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono:   'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -32,16 +39,17 @@
     --line: #33353d; --line-strong: #44464f;
     --ink: #e7e8ec; --ink-2: #b4b7c2; --ink-3: #7d8090;
     --brand-soft: #2a1f47;
+    --clinical-soft:#172554; --clinical-line:#1e3a8a; --clinical-ink:#93c5fd;
     --shadow-card: none;
   }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; -webkit-font-smoothing: antialiased; }
-.wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 60px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 60px; }
 
 /* ── Header ── */
 .topbar { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 50; }
-.topbar-inner { max-width: 880px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 1.02em; letter-spacing: -0.01em; }
 .brand .tagline { font-weight: 500; color: var(--ink-3); font-size: 0.78em; border-left: 1px solid var(--line-strong); padding-left: 9px; margin-left: 2px; }
 .signout-btn { background: none; border: 1px solid var(--line-strong); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-family: var(--font-ui); font-size: 0.82em; color: var(--ink-2); }
@@ -93,6 +101,124 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .latest-line { font-size: 0.84em; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 11px; margin-top: 2px; }
 .latest-line .mono { font-family: var(--font-mono); }
 
+/* ── Clinical monitoring layer ── */
+.demo-card { border-color:#93c5fd; position:relative; }
+.demo-ribbon { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:-18px -20px 16px; padding:9px 14px; background:var(--clinical-soft); border-bottom:1px solid var(--clinical-line); color:var(--clinical-ink); font-size:.76em; font-weight:700; }
+.demo-badge { display:inline-flex; border-radius:999px; padding:3px 8px; background:var(--clinical); color:#fff; font-size:.82em; letter-spacing:.08em; }
+.demo-dismiss { border:0; background:transparent; color:var(--clinical-ink); cursor:pointer; font-family:var(--font-ui); }
+.med-list { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 13px; }
+.med-pill { display:inline-flex; gap:5px; align-items:center; border:1px solid var(--line); border-radius:999px; padding:5px 10px; background:var(--surface-2); color:var(--ink-2); font-size:.76em; }
+.med-pill b { color:var(--ink); }
+.clinical-plan-list { display:flex; flex-direction:column; gap:9px; margin-top:13px; }
+.plan-row { border:1px solid var(--clinical-line); border-left:4px solid var(--clinical); border-radius:11px; padding:11px 12px; background:var(--surface); }
+.plan-row-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.plan-title { color:var(--ink); font-size:.86em; font-weight:700; }
+.plan-meta { color:var(--ink-3); font-size:.73em; line-height:1.55; margin-top:3px; }
+.status-badge { display:inline-flex; align-items:center; border-radius:999px; padding:4px 8px; font-size:.67em; font-weight:700; text-transform:uppercase; letter-spacing:.06em; white-space:nowrap; }
+.status-pending { background:#fff7ed; color:#9a3412; }
+.status-active { background:var(--clinical-soft); color:var(--clinical-ink); }
+.status-completed { background:#ecfdf5; color:#166534; }
+.status-declined,.status-closed { background:var(--surface-2); color:var(--ink-3); }
+body.dark .status-pending { background:#431407; color:#fdba74; }
+body.dark .status-completed { background:#052e16; color:#86efac; }
+.plan-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:9px; }
+.clinical-btn,.clinical-btn-quiet { min-height:36px; border-radius:9px; padding:7px 11px; font-family:var(--font-ui); font-size:.76em; font-weight:700; cursor:pointer; }
+.clinical-btn { border:1px solid var(--clinical); background:var(--clinical); color:#fff; }
+.clinical-btn:hover { background:var(--clinical-hover); }
+.clinical-btn-quiet { border:1px solid var(--clinical-line); background:var(--surface); color:var(--clinical-ink); }
+.create-plan-toggle { width:100%; margin-top:12px; border:1px dashed var(--clinical-line); border-radius:10px; min-height:40px; background:var(--clinical-soft); color:var(--clinical-ink); font-family:var(--font-ui); font-weight:700; cursor:pointer; }
+.plan-form { display:none; margin-top:10px; padding:13px; border:1px solid var(--clinical-line); border-radius:12px; background:var(--clinical-soft); }
+.plan-form.open { display:block; }
+.plan-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.plan-field { min-width:0; }
+.plan-field.full { grid-column:1/-1; }
+.plan-field label { display:block; color:var(--ink-2); font-size:.72em; font-weight:700; margin-bottom:4px; }
+.plan-field input,.plan-field select,.plan-field textarea { width:100%; border:1px solid var(--line-strong); border-radius:9px; background:var(--surface); color:var(--ink); padding:9px 10px; font-family:var(--font-ui); font-size:.84em; }
+.plan-form-actions { display:flex; gap:8px; margin-top:11px; }
+.plan-form-msg { color:var(--warn); font-size:.75em; margin-top:7px; min-height:15px; }
+
+/* Visit Brief — actual patient-reported observations only */
+.brief-bg { display:none; position:fixed; inset:0; z-index:300; background:rgba(15,23,42,.52); backdrop-filter:blur(3px); align-items:flex-end; justify-content:center; }
+.brief-bg.open { display:flex; }
+.brief { width:100%; max-width:1120px; max-height:94vh; overflow:auto; background:var(--bg); border-radius:22px 22px 0 0; box-shadow:0 -16px 48px rgba(15,23,42,.25); }
+.brief-head { position:sticky; top:0; z-index:4; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:18px 20px; background:var(--surface); border-bottom:1px solid var(--clinical-line); }
+.brief-kicker { color:var(--clinical-ink); font-size:.68em; font-weight:700; text-transform:uppercase; letter-spacing:.11em; }
+.brief-head h2 { margin:3px 0 0; font-size:1.2em; }
+.brief-close { width:34px; height:34px; border:0; border-radius:50%; background:var(--surface-2); color:var(--ink-2); cursor:pointer; font-size:1.2em; }
+.brief-head-actions { display:flex; align-items:center; gap:8px; }
+.brief-body { padding:18px 20px 38px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; }
+.brief-section { background:var(--surface); border:1px solid var(--line); border-radius:13px; padding:16px 17px; box-shadow:var(--shadow-card); min-width:0; }
+.brief-section.span-all { grid-column:1/-1; }
+.brief-section h3 { margin:0 0 11px; font-size:.9em; }
+.brief-context-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+.brief-stat { background:var(--surface-2); border-radius:9px; padding:10px; }
+.brief-stat b { display:block; font-family:var(--font-mono); font-size:1em; }
+.brief-stat span { color:var(--ink-3); font-size:.68em; text-transform:uppercase; letter-spacing:.05em; }
+.brief-note { color:var(--ink-3); font-size:.72em; line-height:1.5; margin-top:8px; }
+.effect-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:7px; }
+.effect-row { display:flex; justify-content:space-between; gap:8px; background:var(--surface-2); border-radius:8px; padding:8px 10px; font-size:.76em; }
+.raw-evidence summary { color:var(--clinical-ink); font-weight:700; cursor:pointer; font-size:.82em; }
+.raw-table-wrap { overflow:auto; margin-top:10px; }
+.raw-table { width:100%; border-collapse:collapse; min-width:680px; font-size:.72em; }
+.raw-table th,.raw-table td { border-bottom:1px solid var(--line); padding:7px 6px; text-align:left; vertical-align:top; }
+.outcome-grid { display:grid; grid-template-columns:190px 1fr; gap:9px; }
+.outcome-grid select,.outcome-grid textarea,.chart-note { width:100%; border:1px solid var(--line-strong); border-radius:9px; padding:9px 10px; background:var(--surface); color:var(--ink); font-family:var(--font-ui); }
+.chart-note { min-height:150px; margin-top:9px; font-family:var(--font-mono); font-size:.76em; line-height:1.55; }
+.observation-label { display:inline-flex; align-items:center; gap:6px; margin-top:6px; border:1px solid var(--clinical-line); background:var(--clinical-soft); color:var(--clinical-ink); border-radius:999px; padding:4px 9px; font-size:.68em; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+.metric-line { display:flex; justify-content:space-between; gap:14px; border-bottom:1px solid var(--line); padding:8px 0; font-size:.78em; }
+.metric-line:last-child { border-bottom:0; }
+.metric-line strong { font-family:var(--font-mono); white-space:nowrap; }
+.quality-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.quality-item { background:var(--surface-2); border-radius:9px; padding:9px 10px; font-size:.74em; }
+.quality-item b { display:block; font-family:var(--font-mono); font-size:1.05em; margin-bottom:2px; }
+.chart-shell { border:1px solid var(--line); border-radius:11px; padding:10px; background:var(--surface); overflow:auto; }
+.chart-shell svg { display:block; min-width:620px; }
+.chart-a11y { margin-top:9px; font-size:.72em; color:var(--ink-3); line-height:1.55; }
+.chart-a11y summary { color:var(--clinical-ink); font-weight:700; cursor:pointer; }
+.status-key { display:flex; flex-wrap:wrap; gap:7px; margin-top:9px; font-size:.7em; color:var(--ink-2); }
+.status-key span { border:1px solid var(--line); border-radius:999px; padding:3px 7px; }
+.ai-state { margin-top:9px; min-height:18px; color:var(--ink-3); font-size:.74em; }
+.ai-meta { margin-top:7px; color:var(--ink-3); font-family:var(--font-mono); font-size:.68em; }
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible { outline:3px solid rgba(37,99,235,.28); outline-offset:2px; }
+@media(max-width:760px) { .brief-body { grid-template-columns:1fr; padding-left:12px; padding-right:12px; } .brief-section.span-all { grid-column:auto; } .plan-form-grid,.outcome-grid { grid-template-columns:1fr; } .brief-context-grid { grid-template-columns:1fr 1fr; } .brief-head { padding:14px; } .brief-head-actions .copy-btn { padding:7px 9px; } }
+@media(prefers-reduced-motion:reduce) { .brief { scroll-behavior:auto; } }
+
+/* ── Panel triage + longitudinal overview ── */
+.panel-bar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin:0 0 4px; }
+.panel-stats { display:flex; flex-wrap:wrap; gap:8px; }
+.panel-stat { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 12px; font-size:.78em; color:var(--ink-2); box-shadow:var(--shadow-card); }
+.panel-stat b { font-family:var(--font-mono); font-size:1.15em; color:var(--ink); margin-right:4px; }
+.panel-stat.attn { border-color:#fdba74; background:#fff7ed; color:#9a3412; }
+.panel-stat.attn b { color:#9a3412; }
+.sort-control { display:flex; align-items:center; gap:7px; font-size:.76em; color:var(--ink-3); }
+.sort-control select { border:1px solid var(--line-strong); border-radius:8px; padding:7px 9px; background:var(--surface); color:var(--ink); font-family:var(--font-ui); font-size:1em; }
+.triage-row { display:flex; flex-wrap:wrap; gap:6px; margin:-2px 0 12px; }
+.triage-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid #fdba74; background:#fff7ed; color:#9a3412; border-radius:999px; padding:4px 10px; font-size:.72em; font-weight:600; }
+.triage-chip::before { content:''; width:6px; height:6px; border-radius:50%; background:#ea580c; }
+.delta-up { color:var(--good); } .delta-down { color:#b45309; }
+.card-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.overview-btn { background:var(--clinical); color:#fff; border:none; border-radius:9px; padding:10px 16px; cursor:pointer; font-family:var(--font-ui); font-size:.86em; font-weight:600; min-height:42px; }
+.overview-btn:hover { background:var(--clinical-hover); }
+.report-btn.quiet { background:var(--surface); color:var(--ink-2); border:1px solid var(--line-strong); }
+.phase-table, .tag-table, .dose-table { width:100%; border-collapse:collapse; font-size:.78em; }
+.phase-table th, .phase-table td, .tag-table th, .tag-table td, .dose-table th, .dose-table td { border-bottom:1px solid var(--line); padding:7px 6px; text-align:left; vertical-align:middle; }
+.phase-table th, .tag-table th, .dose-table th { color:var(--ink-3); font-weight:600; font-size:.9em; text-transform:uppercase; letter-spacing:.05em; }
+.phase-bar { position:relative; height:10px; background:var(--surface-2); border-radius:999px; min-width:120px; }
+.phase-bar .range { position:absolute; top:4px; height:2px; background:var(--clinical-line); }
+.phase-bar .mean { position:absolute; top:-1px; width:12px; height:12px; margin-left:-6px; border-radius:50%; background:var(--clinical); }
+.phase-bar .mean.limited { background:var(--surface); border:2px solid var(--clinical); }
+.phase-mark { display:inline-block; margin-left:6px; font-size:.82em; font-weight:700; color:var(--clinical-ink); }
+.mono { font-family:var(--font-mono); }
+.note-item { border-left:3px solid var(--clinical-line); padding:6px 10px; margin-bottom:8px; font-size:.8em; }
+.note-item .meta { color:var(--ink-3); font-size:.88em; margin-bottom:2px; }
+.pattern-row { display:grid; grid-template-columns:150px 1fr 40px; align-items:center; gap:8px; font-size:.76em; margin-bottom:6px; }
+.pattern-row .bar { height:8px; border-radius:999px; background:var(--clinical); }
+.triage-list .metric-line span { color:#9a3412; font-weight:600; }
+@media (prefers-color-scheme: dark) {
+  .panel-stat.attn, .triage-chip { background:#431407; border-color:#9a3412; color:#fdba74; }
+  .panel-stat.attn b { color:#fdba74; }
+}
+
 /* ── Empty / loading states ── */
 .empty-state { text-align: center; padding: 46px 28px; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 14px; }
 .empty-state .icon { font-size: 2em; margin-bottom: 10px; }
@@ -117,8 +243,20 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 #printReport { display: none; }
 @media print {
   body { background: #fff !important; }
-  body > *:not(#printReport) { display: none !important; }
+  body > *:not(#printReport):not(#briefBg) { display: none !important; }
   #printReport { display: block !important; color: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; line-height: 1.5; }
+  #briefBg { display:none !important; }
+  #briefBg.open { display:block !important; position:static; background:#fff; }
+  #briefBg.open .brief { max-width:none; max-height:none; overflow:visible; border-radius:0; box-shadow:none; background:#fff; color:#000; }
+  #briefBg.open .brief-head { position:static; padding:0 0 14px; border-color:#999; background:#fff; }
+  #briefBg.open .brief-head-actions { display:none; }
+  #briefBg.open .brief-body { display:block; padding:14px 0; }
+  #briefBg.open .brief-section { margin-bottom:12px; break-inside:avoid; box-shadow:none; border-color:#aaa; background:#fff; color:#000; }
+  #briefBg.open .brief-stat,#briefBg.open .quality-item { background:#f4f4f4; }
+  #briefBg.open .brief-note,#briefBg.open .chart-a11y,#briefBg.open .ai-state,#briefBg.open .ai-meta { color:#333; }
+  #briefBg.open .plan-actions,#briefBg.open .outcome-grid { display:none; }
+  #briefBg.open .chart-note { border:1px solid #999; color:#000; background:#fff; resize:none; }
+  #briefBg.open svg { color:#000; }
   #printReport h1 { font-size: 20px; margin: 0 0 2px; }
   #printReport .pr-meta { color: #333; font-size: 11px; margin-bottom: 18px; }
   #printReport h2 { font-size: 14px; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #000; }
@@ -151,6 +289,7 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
     <div id="authStep1">
       <input class="auth-input" type="email" id="authEmail" placeholder="you@practice.com" onkeydown="if(event.key==='Enter') sendCode()">
       <button class="auth-btn" id="authBtn" onclick="sendCode()">Send sign-in code</button>
+      <button class="clinical-btn-quiet" style="width:100%;min-height:44px;margin-top:9px;" onclick="previewDemoPortal()">Preview the clinical demo</button>
       <div class="auth-msg" id="authMsg"></div>
     </div>
     <div id="authStep2" style="display:none;">
@@ -186,11 +325,22 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 <div id="viewDash" style="display:none;">
   <div class="wrap">
     <div class="dash-header" id="dashHeader"></div>
+    <div class="panel-bar">
+      <div class="panel-stats" id="panelSummary"></div>
+      <label class="sort-control">Sort
+        <select id="panelSort" onchange="renderPatientCards()">
+          <option value="review">Needs review first</option>
+          <option value="feel_change">Largest decrease in recent feel</option>
+          <option value="recent">Most recent entry</option>
+          <option value="linked">Linked date</option>
+        </select>
+      </label>
+    </div>
     <div class="section-label">Linked patients</div>
     <div id="patientList"><div class="loading"><div class="spinner"></div>Loading patients…</div></div>
     <div class="data-note">
-      <strong>What you're seeing:</strong> patient-reported feel scores, tags, notes, and zone context synced from each patient's account.
-      Active medication lists, selected doses, and live PK zone status are stored on the patient's device and are not yet synced — those appear on the patient's own in-app prescriber report. Access is read-only and only for patients who linked to you with your code; patients can unlink at any time.
+      <strong>What you're seeing:</strong> patient-reported logs, synced medication selections, and prescriber-created monitoring plans.
+      Clinical timing is patient-reported and is not a drug level. Log access remains read-only and only applies to patients who linked with your code; patients can unlink at any time.
     </div>
     <p class="disclaimer">Not medical advice. Generated by Grind-Zone.</p>
   </div>
@@ -198,6 +348,12 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 
 <div class="toast" id="toast"></div>
 <div id="printReport"></div>
+<div class="brief-bg" id="briefBg" onclick="closeVisitBrief(event)">
+  <div class="brief" role="dialog" aria-modal="true" aria-labelledby="briefTitle">
+    <div class="brief-head"><div><div class="brief-kicker" id="briefKicker">Grind-Zone Visit Brief</div><h2 id="briefTitle">Monitoring summary</h2><div class="observation-label">Patient-reported observations</div></div><div class="brief-head-actions"><button class="copy-btn" onclick="printVisitBrief()">Print / PDF</button><button class="brief-close" onclick="closeVisitBrief()" aria-label="Close">×</button></div></div>
+    <div class="brief-body" id="briefBody"></div>
+  </div>
+</div>
 
 <script>
 // ─── SUPABASE (same project as the patient app) ──────────────────────────────
@@ -207,7 +363,14 @@ const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 let currentUser = null;
 let providerProfile = null;
-let patientCache = []; // [{link, logs}]
+let patientCache = []; // [{link, logs, medications, plans, demo?}]
+let openBriefPatientIndex = null;
+let openBriefPlanId = null;
+const LOG_FETCH_LIMIT = 4000;
+let logsTruncated = false;
+const AI_NARRATIVE_ENABLED_FOR_REAL_PATIENTS = false;
+const RESEARCH_METRICS_ENABLED_FOR_REAL_PLANS = false;
+const APPROVED_DEMO_KEY = 'grind-zone-alex-v1';
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 function esc(s) {
@@ -218,7 +381,21 @@ function esc(s) {
 function appDay(date) {
   const d = date ? new Date(date) : new Date();
   if (d.getHours() < 3) d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  return localDateKey(d);
+}
+
+function localDateKey(date) {
+  const d = date ? new Date(date) : new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function localDateFromKey(key) {
+  const [y,m,d] = String(key || '').split('-').map(Number);
+  return new Date(y,(m||1)-1,d||1,12,0,0,0);
+}
+
+function addLocalDays(key, days) {
+  const d = localDateFromKey(key); d.setDate(d.getDate()+Number(days||0)); return localDateKey(d);
 }
 
 function to12(t) {
@@ -244,6 +421,14 @@ function showView(id) {
     document.getElementById(v).style.display = v === id ? 'block' : 'none';
   });
   document.getElementById('signOutBtn').style.display = currentUser ? 'inline-block' : 'none';
+}
+
+function previewDemoPortal() {
+  providerProfile = { id:'demo-provider', name:'Demo clinician', practice_name:'Grind-Zone Clinical Preview', code:'DEMO14' };
+  showView('viewDash');
+  document.getElementById('dashHeader').innerHTML = `<div><div class="dash-practice">Clinical product preview</div><div class="dash-provider">Grind-Zone Visit Brief</div></div><div class="code-block"><div><div class="code-label">Synthetic data only</div><div class="code-badge">DEMO</div></div></div>`;
+  patientCache = buildDemoPanel();
+  renderPatientCards('');
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
@@ -390,6 +575,16 @@ function copyCode() {
 }
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
+// COLUMN NAME MAPPING — actual DB column names
+// logs.noticed_working_at     (onset time — spec called this kicked_in_time)
+// logs.benefit_faded_at       (wear-off time — spec called this wore_off_time)
+// logs.side_effects           (side effects array — spec: clinical_side_effects)
+// patient_medications.drug_key + drug_name  (spec used: drug)
+// monitoring_plans.drug_key + drug_name     (spec used: drug)
+// monitoring_plans.treatment_change_date    (spec used: change_date)
+// monitoring_plans.symptoms                 (spec used: target_symptoms)
+// monitoring_plans.side_effects             (spec used: side_effects_to_watch)
+// monitoring_plans.ended_at                 (added in this migration)
 function renderDashboard() {
   showView('viewDash');
   const h = document.getElementById('dashHeader');
@@ -420,35 +615,162 @@ async function loadPatients() {
 
   if (error) {
     console.error('Links fetch error:', error);
-    list.innerHTML = '<div class="empty-state"><h4>Could not load patients</h4><p>Check your connection and refresh.</p></div>';
+    patientCache = sessionStorage.getItem('gzDemoDismissed') ? [] : buildDemoPanel();
+    renderPatientCards('<div class="data-note">Live patients could not be loaded. The synthetic demo remains available.</div>');
     return;
   }
 
-  if (!links || !links.length) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <div class="icon">🩺</div>
-        <h4>No linked patients yet</h4>
-        <p>Share this code with patients — they enter it in <strong>Settings&nbsp;›&nbsp;Link to prescriber</strong> in the Grind-Zone app:</p>
-        <p style="margin-top:10px;"><span class="code-inline" style="font-size:1.3em;">${esc(providerProfile.code)}</span></p>
-      </div>`;
-    return;
+  const ids = (links || []).map(l => l.patient_user_id);
+  let logs = [], medications = [], plans = [];
+  if (ids.length) {
+    const [logRes, medRes, planRes] = await Promise.all([
+      supa.from('logs').select('*').in('user_id',ids).order('ts',{ascending:false}).limit(LOG_FETCH_LIMIT),
+      supa.from('patient_medications').select('*').in('user_id',ids).eq('active',true).order('updated_at',{ascending:false}),
+      supa.from('monitoring_plans').select('*').in('patient_user_id',ids).eq('provider_id',providerProfile.id).order('created_at',{ascending:false})
+    ]);
+    logs = logRes.data || []; medications = medRes.data || []; plans = planRes.data || [];
+    logsTruncated = logs.length >= LOG_FETCH_LIMIT;
+    if (logRes.error) console.error('Logs fetch error:',logRes.error);
+    if (medRes.error) console.warn('Medication sync not available:',medRes.error.message);
+    if (planRes.error) console.warn('Monitoring plans not available:',planRes.error.message);
   }
 
-  // One query for all linked patients' logs — RLS restricts to confirmed links
-  const ids = links.map(l => l.patient_user_id);
-  const { data: logs, error: logErr } = await supa.from('logs')
-    .select('user_id, drug, feel, tags, note, time, dose_time, elapsed_h, zone, ts')
-    .in('user_id', ids)
-    .order('ts', { ascending: false })
-    .limit(4000);
-
-  if (logErr) console.error('Logs fetch error:', logErr);
-  const byPatient = {};
+  const byPatient = {}, medsByPatient = {}, plansByPatient = {};
   (logs || []).forEach(r => { (byPatient[r.user_id] = byPatient[r.user_id] || []).push(r); });
+  (medications || []).forEach(r => { (medsByPatient[r.user_id] = medsByPatient[r.user_id] || []).push(r); });
+  (plans || []).forEach(r => { (plansByPatient[r.patient_user_id] = plansByPatient[r.patient_user_id] || []).push(r); });
 
-  patientCache = links.map(l => ({ link: l, logs: byPatient[l.patient_user_id] || [] }));
-  list.innerHTML = patientCache.map((p, i) => patientCardHTML(p, i)).join('');
+  const real = (links || []).map(l => ({ link:l, logs:byPatient[l.patient_user_id]||[], medications:medsByPatient[l.patient_user_id]||[], plans:plansByPatient[l.patient_user_id]||[] }));
+  patientCache = sessionStorage.getItem('gzDemoDismissed') ? real : [...buildDemoPanel(), ...real];
+  renderPatientCards('');
+}
+
+function insightOptions() {
+  return { today: appDay(), metrics: GrindZoneClinicalMetrics };
+}
+
+let _lastPrefix = '';
+function renderPatientCards(prefix) {
+  if (prefix !== undefined) _lastPrefix = prefix;
+  const list = document.getElementById('patientList');
+  const opts = insightOptions();
+  renderPanelSummary(opts);
+  const truncNote = logsTruncated ? `<div class="data-note">Showing the most recent ${LOG_FETCH_LIMIT.toLocaleString()} log entries across all linked patients. Older entries are not loaded, so long-range figures may be incomplete for some patients.</div>` : '';
+  if (!patientCache.length) {
+    list.innerHTML = `${_lastPrefix}<div class="empty-state"><div class="icon">🩺</div><h4>No linked patients yet</h4><p>Share your code. Patients enter it in <strong>Settings › Linked prescriber</strong>:</p><p style="margin-top:10px;"><span class="code-inline" style="font-size:1.3em;">${esc(providerProfile.code)}</span></p></div>`;
+    return;
+  }
+  // Card handlers address patients by their patientCache index, so sort an index list.
+  const rows = patientCache.map((p, i) => {
+    const triage = GrindZoneProviderInsights.triageSignals(p, opts);
+    const period = GrindZoneProviderInsights.periodComparison(GrindZoneProviderInsights.everydayLogs(p.logs), opts);
+    return { i, p, triage, period };
+  });
+  const mode = document.getElementById('panelSort')?.value || 'review';
+  const lastTs = r => String((r.p.logs || [])[0]?.ts || '');
+  rows.sort((a, b) => {
+    if (mode === 'review') return (a.triage.signals[0]?.priority ?? 99) - (b.triage.signals[0]?.priority ?? 99) || b.triage.signals.length - a.triage.signals.length || a.i - b.i;
+    if (mode === 'feel_change') return (a.period.delta ?? Infinity) - (b.period.delta ?? Infinity) || a.i - b.i;
+    if (mode === 'recent') return lastTs(b).localeCompare(lastTs(a)) || a.i - b.i;
+    return a.i - b.i;
+  });
+  list.innerHTML = _lastPrefix + truncNote + rows.map(r => patientCardHTML(r.p, r.i, r.triage, r.period)).join('');
+}
+
+function renderPanelSummary(opts) {
+  const el = document.getElementById('panelSummary');
+  if (!el) return;
+  if (!patientCache.length) { el.innerHTML = ''; return; }
+  const s = GrindZoneProviderInsights.panelSummary(patientCache, opts || insightOptions());
+  el.innerHTML = `<span class="panel-stat"><b>${s.linked_patients}</b>linked patient${s.linked_patients === 1 ? '' : 's'}</span>`
+    + `<span class="panel-stat"><b>${s.active_plans}</b>active plan${s.active_plans === 1 ? '' : 's'}</span>`
+    + `<span class="panel-stat"><b>${s.pending_plans}</b>awaiting patient</span>`
+    + `<span class="panel-stat${s.patients_needing_review ? ' attn' : ''}"><b>${s.patients_needing_review}</b>need${s.patients_needing_review === 1 ? 's' : ''} review</span>`;
+}
+
+function dismissDemoPatient() {
+  sessionStorage.setItem('gzDemoDismissed','1');
+  patientCache = patientCache.filter(p=>!p.demo);
+  renderPatientCards();
+}
+
+function buildDemoPatient() {
+  const end = localDateKey();
+  const start = addLocalDays(end,-13);
+  const feels = [6,7,7,8,7,6,7,8,7,6,7,7];
+  const fadeHours = [5.4,5.6,5.5,5.7,5.3,5.6,5.5,5.4,5.8,5.3,5.6,5.5];
+  const effects = [['Reduced appetite'],['Reduced appetite'],[],['Reduced appetite'],['Irritability at wear-off'],['Reduced appetite'],['Reduced appetite','Dry mouth'],[],['Irritability at wear-off'],['Reduced appetite'],['Reduced appetite'],['Irritability at wear-off']];
+  const sleepContexts = ['good','good','okay','poor','okay','good','very poor','poor','okay','good','good','okay'];
+  const checkDays = [0,1,2,3,4,5,7,8,9,10,11,13];
+  const logs = checkDays.map((day,i)=>{
+    const date = addLocalDays(start,day);
+    const fadeMinutes = 480 + Math.round(fadeHours[i]*60);
+    const fade = `${String(Math.floor(fadeMinutes/60)%24).padStart(2,'0')}:${String(fadeMinutes%60).padStart(2,'0')}`;
+    const onset = i%3===0?'08:50':'09:00';
+    return { id:`demo-log-${i}`, user_id:'demo-alex', drug:'concerta', dose_mg:27, feel:feels[i], tags:effects[i], side_effects:effects[i], note:i===8?'Focus faded before the last meeting.':'', time:'18:10', dose_time:'08:00', noticed_working_at:onset, benefit_faded_at:fade, elapsed_h:10.16, zone:'Taper', ts:`${date}T18:10:00-07:00`, monitoring_plan_id:'demo-plan', took_medication:true, sleep_context:sleepContexts[i], meal_context:i%4===0?'breakfast reported':null,
+      patient_logical_day:date, occurred_at:`${date}T18:10:00-07:00`, submitted_at:`${date}T18:14:00-07:00`, patient_timezone:'America/Los_Angeles', utc_offset_minutes:-420, clinical_side_effects_answered:i!==5,
+      dose_occurred_at:`${date}T08:00:00-07:00`, onset_occurred_at:`${date}T${onset}:00-07:00`, wearoff_occurred_at:`${date}T${fade}:00-07:00` };
+  });
+  const extraDay = addLocalDays(start,3);
+  logs.push({ ...logs[3], id:'demo-log-extra', feel:7, time:'12:20', ts:`${extraDay}T12:20:00-07:00`, occurred_at:`${extraDay}T12:20:00-07:00`, submitted_at:`${extraDay}T12:22:00-07:00`, side_effects:[], tags:[], note:'' });
+  logs.push(...demoRoutineLogsAlex(start, end));
+  logs.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  return {
+    demo:true, demoKey:APPROVED_DEMO_KEY, demoLabel:'Synthetic patient · 14-day monitoring plan + 6 weeks of everyday logs',
+    link:{id:'demo-link',patient_user_id:'demo-alex',patient_email:'Alex R.',confirmed:true,created_at:`${start}T09:00:00`},
+    medications:[{drug_key:'concerta',drug_name:'Concerta',dose_mg:27,active:true}],
+    plans:[{id:'demo-plan',provider_id:'demo-provider',patient_user_id:'demo-alex',drug_key:'concerta',drug_name:'Concerta',dose_mg:27,treatment_change_date:start,duration_days:14,end_date:end,ended_at:`${end}T20:00:00-07:00`,patient_timezone:'America/Los_Angeles',patient_utc_offset_minutes:-420,follow_up_date:addLocalDays(end,2),symptoms:['Focus','Task completion'],side_effects:['Reduced appetite','Irritability at wear-off','Dry mouth'],status:'completed',outcome:null,outcome_note:null,created_at:`${start}T09:00:00`}],
+    logs
+  };
+}
+
+function buildDemoPanel() {
+  return [buildDemoPatient(), buildDemoPatientJordan()];
+}
+
+// Everyday (non-plan) logs as the patient app records them for Concerta:
+// no dose_mg (no dose selector for Concerta) and no monitoring_plan_id, so
+// the Visit Brief, which filters by plan id, is unaffected.
+function demoRoutineLogsAlex(planStart, end) {
+  const out = [];
+  const entry = (date, time, elapsed, zone, feel, tags, note) => out.push({
+    id:`demo-routine-${date}-${time}`, user_id:'demo-alex', drug:'concerta', dose_mg:null, feel, tags, note:note||'',
+    time, dose_time:'08:00', elapsed_h:elapsed, zone, ts:`${date}T${time}:00`, monitoring_plan_id:null
+  });
+  for (let d = 0; d < 42; d++) {
+    if (d % 5 === 3) continue;
+    const date = addLocalDays(end, d - 41), after = date >= planStart;
+    if (d % 4 === 1) entry(date, '10:00', 2, 'Building', after ? 6 : 5, d % 8 === 1 ? ['suppressed appetite'] : ['calm']);
+    entry(date, '14:10', 6.17, 'True Peak ⭐', after ? (d % 3 === 0 ? 7 : 8) : (d % 3 === 0 ? 6 : 7), after ? ['focused','productive'] : (d % 3 === 0 ? ['distracted'] : ['focused']),
+      d === 32 ? 'Mornings and early afternoon much easier to get through.' : '');
+    if (d % 2 === 0) entry(date, '19:40', 11.67, 'Taper', d % 3 === 0 ? 4 : 5, after ? (d % 3 === 0 ? ['irritable','crashed'] : ['irritable']) : ['tired','distracted'],
+      d === 10 ? 'Hard to stay on task in afternoon meetings.' : d === 40 ? 'Crashed around 7pm, short with the kids.' : '');
+  }
+  return out;
+}
+
+function buildDemoPatientJordan() {
+  const today = localDateKey();
+  const logs = [];
+  for (let d = 60; d >= 16; d--) {
+    if (d % 4 === 2) continue;
+    const date = addLocalDays(today, -d), dose = d >= 25 ? 150 : 300;
+    logs.push({ id:`demo-jordan-${d}-a`, user_id:'demo-jordan', drug:'wellbutrin', dose_mg:dose, feel:dose === 150 ? (d % 3 ? 5 : 4) : (d % 3 ? 5 : 6),
+      tags:dose === 150 ? (d % 3 ? ['low'] : ['flat','tired']) : ['energized'], note:d === 31 ? 'Mood still flat most days.' : '',
+      time:'14:00', dose_time:'07:30', elapsed_h:6.5, zone:'Peak Zone ⭐', ts:`${date}T14:00:00`, monitoring_plan_id:null });
+    if (d % 2 === 0) logs.push({ id:`demo-jordan-${d}-b`, user_id:'demo-jordan', drug:'wellbutrin', dose_mg:dose, feel:dose === 150 ? 4 : 3,
+      tags:dose === 150 ? ['tired'] : ['wired','restless'], note:d === 20 ? 'Not sleeping well since the higher dose.' : '',
+      time:'21:00', dose_time:'07:30', elapsed_h:13.5, zone:'Active Plateau', ts:`${date}T21:00:00`, monitoring_plan_id:null });
+  }
+  logs.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  const sent = addLocalDays(today, -5);
+  return {
+    demo:true, demoLabel:'Synthetic patient · everyday logs, plan awaiting acceptance',
+    link:{ id:'demo-link-jordan', patient_user_id:'demo-jordan', patient_email:'Jordan M.', confirmed:true, created_at:`${addLocalDays(today,-70)}T09:00:00` },
+    medications:[{ drug_key:'wellbutrin', drug_name:'Wellbutrin XL', dose_mg:300, active:true, updated_at:`${addLocalDays(today,-24)}T08:00:00` }],
+    plans:[{ id:'demo-plan-jordan', provider_id:'demo-provider', patient_user_id:'demo-jordan', drug_key:'wellbutrin', drug_name:'Wellbutrin XL', dose_mg:300, treatment_change_date:sent, duration_days:14, end_date:addLocalDays(sent,13), follow_up_date:addLocalDays(sent,14), symptoms:['Mood','Sleep'], side_effects:['Trouble sleeping','Anxiety'], status:'pending', outcome:null, outcome_note:null, created_at:`${sent}T10:00:00` }],
+    logs
+  };
 }
 
 // ── Per-patient stats over the last 30 logical days ──
@@ -492,26 +814,48 @@ function trendSvg(days30, byDay, width, height) {
   return `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
 }
 
-function patientCardHTML(p, idx) {
-  const { link, logs } = p;
+function patientCardHTML(p, idx, triage, period) {
+  const { link, logs, medications = [], plans = [] } = p;
   const s = patientStats(logs);
+  const opts = insightOptions();
+  triage = triage || GrindZoneProviderInsights.triageSignals(p, opts);
+  period = period || GrindZoneProviderInsights.periodComparison(GrindZoneProviderInsights.everydayLogs(logs), opts);
+  const triageHTML = triage.signals.length
+    ? `<div class="triage-row" aria-label="Needs review">${triage.signals.map(sig => `<span class="triage-chip" title="${esc(sig.detail)}">${esc(sig.label)} · ${esc(sig.detail)}</span>`).join('')}</div>`
+    : '';
+  const deltaHTML = period.delta === null
+    ? `<div class="stat-value">—</div><div class="stat-label">Everyday feel, last 14d vs prior · too few entries</div>`
+    : `<div class="stat-value ${period.delta < 0 ? 'delta-down' : period.delta > 0 ? 'delta-up' : ''}">${period.delta > 0 ? '+' : ''}${period.delta.toFixed(1)}</div><div class="stat-label">Everyday feel, last 14d vs prior · ${period.recent.mean.toFixed(1)} (n=${period.recent.n}) vs ${period.prior.mean.toFixed(1)} (n=${period.prior.n})</div>`;
   const latest = logs[0];
   const latestLine = latest
     ? `Latest: <span class="mono">${esc(appDay(latest.ts))} ${esc(to12(latest.time))}</span> · ${esc(latest.drug)} · ${esc((latest.zone || '—').replace(' ⭐', ''))} · feel <strong>${latest.feel}/10</strong>`
     : 'No log entries synced yet.';
 
-  return `<div class="patient-card">
+  const medsHTML = medications.length
+    ? medications.map(m=>`<span class="med-pill"><b>${esc(m.drug_name || m.drug_key)}</b>${m.dose_mg != null ? ` ${esc(m.dose_mg)} mg` : ' · dose not set'}</span>`).join('')
+    : '<span style="font-size:.76em;color:var(--ink-3);">Medication sync not available yet</span>';
+  const plansHTML = plans.length ? `<div class="clinical-plan-list">${plans.map(plan=>providerPlanRowHTML(plan,idx,p.demo)).join('')}</div>` : '';
+
+  return `<div class="patient-card${p.demo?' demo-card':''}">
+    ${p.demo?`<div class="demo-ribbon"><span><span class="demo-badge">DEMO</span> ${esc(p.demoLabel || 'Synthetic patient')}</span><button class="demo-dismiss" onclick="dismissDemoPatient()">Dismiss for this session</button></div>`:''}
     <div class="patient-head">
       <div>
         <div class="patient-id">${esc(link.patient_email || 'Patient ' + link.patient_user_id.slice(0, 8))}</div>
-        <div class="patient-sub">Linked ${esc(new Date(link.created_at).toLocaleDateString())} · ${logs.length} total entries</div>
+        <div class="patient-sub">Linked ${esc(new Date(link.created_at).toLocaleDateString())} · ${logs.length} total entries${triage.last_entry_day ? ' · last entry ' + esc(triage.last_entry_day) : ''}</div>
       </div>
-      <button class="report-btn" onclick="openPatientReport(${idx})">View report</button>
+      <div class="card-actions">
+        <button class="overview-btn" onclick="openPatientOverview(${idx})">Pre-visit overview</button>
+        <button class="report-btn quiet" onclick="openPatientReport(${idx})">View report</button>
+      </div>
     </div>
+    ${triageHTML}
+    <div class="trend-label">Current medications</div>
+    <div class="med-list">${medsHTML}</div>
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-value">${s.avg30 != null ? s.avg30.toFixed(1) : '—'}</div><div class="stat-label">Avg feel · 30d</div></div>
       <div class="stat-box"><div class="stat-value">${s.daysTracked}<span style="font-size:0.55em;color:var(--ink-3);font-weight:500;"> / 30</span></div><div class="stat-label">Days tracked</div></div>
       <div class="stat-box"><div class="stat-value">${s.logs30.length}</div><div class="stat-label">Entries · 30d</div></div>
+      <div class="stat-box">${deltaHTML}</div>
     </div>
     <div class="trend-wrap">
       <div class="trend-label">30-day feel trend</div>
@@ -519,7 +863,358 @@ function patientCardHTML(p, idx) {
     </div>
     ${s.topTags.length ? `<div class="tag-pills">${s.topTags.map(([t, c]) => `<span class="tag-pill">${esc(t)} · ${c}×</span>`).join('')}</div>` : ''}
     <div class="latest-line" style="margin-top:${s.topTags.length ? '12px' : '2px'};">${latestLine}</div>
+    ${plansHTML}
+    ${p.demo?'':`<button class="create-plan-toggle" onclick="togglePlanForm(${idx})">+ Create monitoring plan</button>${planFormHTML(idx,medications)}`}
   </div>`;
+}
+
+function planStatusLabel(plan) {
+  if (plan.status === 'active') {
+    const start = plan.treatment_change_date || localDateKey();
+    const day = Math.max(1,Math.floor((localDateFromKey(localDateKey())-localDateFromKey(start))/864e5)+1);
+    return `Active · day ${Math.min(day,plan.duration_days||14)}/${plan.duration_days||14}`;
+  }
+  return plan.status || 'pending';
+}
+
+function providerPlanRowHTML(plan, idx, demo) {
+  const canBrief = plan.status === 'active' || plan.status === 'completed' || plan.status === 'closed';
+  return `<div class="plan-row"><div class="plan-row-head"><div><div class="plan-title">${esc(plan.drug_name || plan.drug_key)}${plan.dose_mg != null ? ` · ${esc(plan.dose_mg)} mg` : ''}</div><div class="plan-meta">${esc(plan.treatment_change_date || 'No change date')} → ${esc(plan.end_date || 'open')} ${plan.follow_up_date?`· follow-up ${esc(plan.follow_up_date)}`:''}</div></div><span class="status-badge status-${esc(plan.status)}">${esc(planStatusLabel(plan))}</span></div>
+    <div class="plan-actions">${canBrief?`<button class="clinical-btn" onclick="openVisitBrief(${idx},'${plan.id}')">Open Visit Brief</button>`:''}${plan.status==='active'&&!demo?`<button class="clinical-btn-quiet" onclick="closeMonitoringPlan(${idx},'${plan.id}')">End plan early</button>`:''}</div></div>`;
+}
+
+function planFormHTML(idx, medications) {
+  const today = localDateKey(), follow = addLocalDays(today,14);
+  const medOptions = medications.map(m=>`<option value="${esc(m.drug_key)}" data-name="${esc(m.drug_name||m.drug_key)}" data-dose="${m.dose_mg??''}">${esc(m.drug_name||m.drug_key)}${m.dose_mg!=null?' · '+esc(m.dose_mg)+' mg':''}</option>`).join('');
+  return `<div class="plan-form" id="planForm-${idx}"><div class="plan-form-grid">
+    <div class="plan-field"><label>Medication</label><select id="planDrug-${idx}" onchange="prefillPlanMedication(${idx})"><option value="">Choose…</option>${medOptions}<option value="ritalin">Ritalin LA</option><option value="concerta">Concerta</option><option value="wellbutrin">Wellbutrin XL</option><option value="lamictal">Lamictal</option><option value="remeron">Remeron</option><option value="lexapro">Lexapro</option></select></div>
+    <div class="plan-field"><label>Dose (mg)</label><input type="number" id="planDose-${idx}" min="0" step="0.5" placeholder="27"></div>
+    <div class="plan-field"><label>Treatment change date</label><input type="date" id="planStart-${idx}" value="${today}" onchange="updatePlanFollowup(${idx})"></div>
+    <div class="plan-field"><label>Duration</label><select id="planDuration-${idx}" onchange="updatePlanFollowup(${idx})"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="21">21 days</option><option value="30">30 days</option></select></div>
+    <div class="plan-field"><label>Follow-up date</label><input type="date" id="planFollow-${idx}" value="${follow}"></div>
+    <div class="plan-field full"><label>Symptoms to track (comma separated)</label><input id="planSymptoms-${idx}" placeholder="Focus, task completion, afternoon coverage"></div>
+    <div class="plan-field full"><label>Side effects to watch (comma separated)</label><input id="planEffects-${idx}" placeholder="Reduced appetite, trouble sleeping, irritability"></div>
+  </div><div class="plan-form-actions"><button class="clinical-btn" id="planCreate-${idx}" onclick="createMonitoringPlan(${idx})">Send plan for review</button><button class="clinical-btn-quiet" onclick="togglePlanForm(${idx})">Cancel</button></div><div class="plan-form-msg" id="planMsg-${idx}"></div></div>`;
+}
+
+function togglePlanForm(idx) { document.getElementById(`planForm-${idx}`)?.classList.toggle('open'); }
+
+function prefillPlanMedication(idx) {
+  const select = document.getElementById(`planDrug-${idx}`), opt = select?.selectedOptions?.[0];
+  if (opt?.dataset.dose) document.getElementById(`planDose-${idx}`).value = opt.dataset.dose;
+}
+
+function updatePlanFollowup(idx) {
+  const start = document.getElementById(`planStart-${idx}`)?.value;
+  const duration = Number(document.getElementById(`planDuration-${idx}`)?.value || 14);
+  if (start) document.getElementById(`planFollow-${idx}`).value = addLocalDays(start,duration);
+}
+
+function splitPlanList(value) { return String(value||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,12); }
+
+async function createMonitoringPlan(idx) {
+  const patient = patientCache[idx];
+  if (!patient || patient.demo) return;
+  const select = document.getElementById(`planDrug-${idx}`), drugKey = select.value;
+  const msg = document.getElementById(`planMsg-${idx}`), btn = document.getElementById(`planCreate-${idx}`);
+  if (!drugKey) { msg.textContent='Choose a medication.'; return; }
+  const duration = Number(document.getElementById(`planDuration-${idx}`).value||14);
+  const start = document.getElementById(`planStart-${idx}`).value;
+  const doseRaw = document.getElementById(`planDose-${idx}`).value;
+  const payload = { provider_id:providerProfile.id, patient_user_id:patient.link.patient_user_id, drug_key:drugKey,
+    drug_name:select.selectedOptions[0]?.dataset.name || select.selectedOptions[0]?.textContent.split(' · ')[0] || drugKey,
+    dose_mg:doseRaw===''?null:Number(doseRaw), treatment_change_date:start, duration_days:duration,
+    end_date:addLocalDays(start,duration-1), follow_up_date:document.getElementById(`planFollow-${idx}`).value||null,
+    symptoms:splitPlanList(document.getElementById(`planSymptoms-${idx}`).value), side_effects:splitPlanList(document.getElementById(`planEffects-${idx}`).value), status:'pending' };
+  btn.disabled=true; btn.textContent='Sending…'; msg.textContent='';
+  const { data, error } = await supa.from('monitoring_plans').insert(payload).select('*').single();
+  if (error) { msg.textContent='Plan could not be created. Check the migration and try again.'; btn.disabled=false; btn.textContent='Send plan for review'; return; }
+  patient.plans.unshift(data); renderPatientCards(); showToast('Plan sent for patient review');
+}
+
+async function closeMonitoringPlan(idx, id) {
+  if (!confirm('End this monitoring plan early? Existing check-ins remain available.')) return;
+  const patient = patientCache[idx], plan = patient?.plans.find(p=>p.id===id); if (!plan) return;
+  const endedAt=new Date().toISOString();
+  const { error } = await supa.from('monitoring_plans').update({status:'closed',ended_at:endedAt,updated_at:endedAt}).eq('id',id).eq('provider_id',providerProfile.id);
+  if (error) { showToast('Could not close plan'); return; }
+  plan.status='closed'; plan.ended_at=endedAt; renderPatientCards(); showToast('Plan closed');
+}
+
+function hoursLabel(value) { return value==null?'—':`${Number(value).toFixed(1)} hr`; }
+function countPercent(metric) { return `${metric.count}/${metric.n}${metric.percentage==null?'':` (${Math.round(metric.percentage*100)}%)`}`; }
+function briefMetrics(patient, plan) {
+  return GrindZoneClinicalMetrics.computeVisitBrief({ plan, logs:patient.logs, patientTimezone:patient.demo?'America/Los_Angeles':null });
+}
+
+function openVisitBrief(idx, planId) {
+  const patient=patientCache[idx], plan=patient?.plans.find(p=>p.id===planId); if(!patient||!plan)return;
+  openBriefPatientIndex=idx; openBriefPlanId=planId;
+  document.getElementById('briefKicker').textContent='Grind-Zone Visit Brief';
+  document.getElementById('briefTitle').textContent=`${patient.link.patient_email||'Patient'} · ${plan.drug_name||plan.drug_key}${plan.dose_mg!=null?' '+plan.dose_mg+' mg':''}`;
+  document.getElementById('briefBody').innerHTML=visitBriefHTML(patient,plan,idx);
+  document.getElementById('briefBg').classList.add('open');
+  document.querySelector('.brief')?.scrollTo(0,0);
+}
+
+function closeVisitBrief(e) { const bg=document.getElementById('briefBg'); if(!e||e.target===bg) bg.classList.remove('open'); }
+
+// ─── PRE-VISIT OVERVIEW (everyday logs, descriptive) ─────────────────────────
+function openPatientOverview(idx) {
+  const patient = patientCache[idx]; if (!patient) return;
+  openBriefPatientIndex = idx; openBriefPlanId = null;
+  document.getElementById('briefKicker').textContent = 'Grind-Zone Pre-visit Overview';
+  document.getElementById('briefTitle').textContent = patient.link.patient_email || 'Patient';
+  document.getElementById('briefBody').innerHTML = patientOverviewHTML(patient);
+  document.getElementById('briefBg').classList.add('open');
+  document.querySelector('.brief')?.scrollTo(0,0);
+}
+
+function fmtMean(v) { return v == null ? '—' : Number(v).toFixed(1); }
+
+function phaseSectionHTML(phases, windowDays) {
+  if (!phases.drugs.length) return `<div class="brief-note">No everyday entries with an app-displayed phase in the last ${windowDays} days. n=0.</div>`;
+  const pct = v => ((v - 1) / 9 * 100).toFixed(1);
+  return phases.drugs.map(d => `
+    <div style="margin-bottom:12px;"><div class="trend-label" style="margin-top:4px;">${esc(d.drug_name)} · n=${d.n}</div>
+    <table class="phase-table"><thead><tr><th>App phase at time of entry</th><th>Median hrs since dose</th><th>Mean feel (range)</th><th style="width:38%;">1 ─ 10</th><th>n</th></tr></thead><tbody>
+    ${d.phases.map(ph => `<tr>
+      <td>${esc(ph.label)}${ph.label === d.highest_mean_phase ? '<span class="phase-mark">highest</span>' : ''}${ph.label === d.lowest_mean_phase ? '<span class="phase-mark">lowest</span>' : ''}</td>
+      <td class="mono">${ph.median_elapsed_h == null ? '—' : ph.median_elapsed_h.toFixed(1)}</td>
+      <td class="mono">${fmtMean(ph.mean)} (${ph.min}–${ph.max})</td>
+      <td><div class="phase-bar" role="img" aria-label="${esc(ph.label)}: mean ${fmtMean(ph.mean)}, range ${ph.min} to ${ph.max}, n=${ph.n}"><span class="range" style="left:${pct(ph.min)}%;width:${(pct(ph.max) - pct(ph.min))}%;"></span><span class="mean${ph.limited ? ' limited' : ''}" style="left:${pct(ph.mean)}%;"></span></div></td>
+      <td class="mono">${ph.n}${ph.limited ? '*' : ''}</td></tr>`).join('')}
+    </tbody></table></div>`).join('') + `<div class="brief-note">Entries grouped by the phase the app displayed when the patient logged, based on the patient-entered clock dose time. Ordered by median hours since dose. * fewer than ${GrindZoneProviderInsights.MIN_OBSERVATIONS} entries (shown, not ranked). Highest/lowest are descriptive only — not a drug level and not a comparison to reference values.</div>`;
+}
+
+function tagSectionHTML(tags) {
+  if (!tags.domains.length) return `<div class="brief-note">No tags reported in the last 28 days. n=0.</div>`;
+  return `<table class="tag-table"><thead><tr><th>Domain</th><th>Tag</th><th>Days, last 14</th><th>Days, prior 14</th></tr></thead><tbody>
+    ${tags.domains.map(dom => dom.tags.map((t, i) => `<tr><td>${i === 0 ? esc(dom.domain) : ''}</td><td>${esc(t.tag)}</td><td class="mono">${t.recent_days}</td><td class="mono">${t.prior_days}</td></tr>`).join('')).join('')}
+  </tbody></table><div class="brief-note">Distinct days a tag was reported (a tag logged twice on one day counts once). Days with any entry: last 14 = ${tags.recent_window.days_with_entries}, prior 14 = ${tags.prior_window.days_with_entries}; compare counts against these, since fewer logging days means fewer chances to report.</div>`;
+}
+
+function doseSectionHTML(doses) {
+  if (!doses.drugs.length) return `<div class="brief-note">No dose changes appear in everyday logs. The app records a dose on everyday entries only for medications with a dose selector (Wellbutrin XL, Lamictal, Lexapro).</div>`;
+  return doses.drugs.map(d => `<div class="trend-label" style="margin-top:4px;">${esc(d.drug_name)}</div><table class="dose-table"><thead><tr><th>Dose</th><th>Dates in logs</th><th>Entries</th><th>Mean feel</th></tr></thead><tbody>
+    ${d.segments.map(s => `<tr><td class="mono">${esc(s.dose_mg)} mg</td><td class="mono">${esc(s.first_day)} – ${esc(s.last_day)}</td><td class="mono">${s.entries}</td><td class="mono">${fmtMean(s.feel.mean)}${s.feel.limited ? '*' : ''}</td></tr>`).join('')}
+  </tbody></table>`).join('') + `<div class="brief-note">Patient-selected dose recorded with each entry, in time order. Side-by-side means are descriptive and do not establish an effect of the dose change. * limited entries.</div>`;
+}
+
+function patternSectionHTML(pattern) {
+  if (!pattern.n) return `<div class="brief-note">No entries in the last ${pattern.window_days} days. n=0.</div>`;
+  const max = Math.max(...pattern.buckets.map(b => b.count), 1);
+  return pattern.buckets.map(b => `<div class="pattern-row"><span>${esc(b.label)}</span><div style="background:var(--surface-2);border-radius:999px;"><div class="bar" style="width:${(b.count / max * 100).toFixed(1)}%;${b.count ? '' : 'background:transparent;'}"></div></div><span class="mono">${b.count}</span></div>`).join('')
+    + `<div class="brief-note">Entries are patient-initiated, so they can over-represent the times the patient chose to log. n=${pattern.n} entries, last ${pattern.window_days} days.</div>`;
+}
+
+function notesSectionHTML(notes) {
+  if (!notes.notes.length) return `<div class="brief-note">No notes written. n=0.</div>`;
+  return notes.notes.map(n => `<div class="note-item"><div class="meta mono">${esc(n.day || '')} ${esc(to12(n.time) || '')} · ${esc(n.drug_name)}${n.phase ? ' · ' + esc(n.phase) : ''}${n.feel != null ? ' · feel ' + n.feel + '/10' : ''}${n.monitoring_plan_id ? ' · plan check-in' : ''}</div>${esc(n.note)}</div>`).join('');
+}
+
+function patientOverviewHTML(patient) {
+  const opts = insightOptions();
+  const ov = GrindZoneProviderInsights.computePatientOverview(patient, opts);
+  const p = ov.period;
+  const meds = (patient.medications || []).length
+    ? patient.medications.map(m => `<span class="med-pill"><b>${esc(m.drug_name || m.drug_key)}</b>${m.dose_mg != null ? ` ${esc(m.dose_mg)} mg` : ' · dose not set'}${m.updated_at ? ` · updated ${esc(new Date(m.updated_at).toLocaleDateString())}` : ''}</span>`).join('')
+    : '<span class="brief-note">No medication list synced.</span>';
+  const deltaText = p.delta === null ? 'Too few entries in one window to compare' : `${p.delta > 0 ? '+' : ''}${p.delta.toFixed(1)}`;
+  const triageHTML = ov.triage.signals.length
+    ? `<div class="triage-list">${ov.triage.signals.map(s => `<div class="metric-line"><span>${esc(s.label)}</span><strong style="font-family:var(--font-ui);font-weight:500;">${esc(s.detail)}</strong></div>`).join('')}</div><div class="brief-note">Workflow reminders from plan dates, plan status, and entry recency. They are not clinical alerts.</div>`
+    : '<div class="brief-note">No open workflow items for this patient.</div>';
+  return `
+    <section class="brief-section span-all"><h3>1. Snapshot</h3>
+      <div class="med-list">${meds}</div>
+      <div class="brief-context-grid">
+        <div class="brief-stat"><b>${fmtMean(p.recent?.mean)}</b><span>Mean feel · last 14d · n=${p.recent?.n ?? 0}</span></div>
+        <div class="brief-stat"><b>${fmtMean(p.prior?.mean)}</b><span>Mean feel · prior 14d · n=${p.prior?.n ?? 0}</span></div>
+        <div class="brief-stat"><b>${esc(deltaText)}</b><span>Difference</span></div>
+        <div class="brief-stat"><b>${p.recent?.days_with_entries ?? 0} / ${p.prior?.days_with_entries ?? 0}</b><span>Days with entries (last / prior 14)</span></div>
+      </div>
+      <div class="brief-note">Self-reported feel score (1–10) on everyday entries, not a validated symptom scale. Monitoring-plan check-ins (overall-day ratings) are analysed in each plan's Visit Brief and are excluded here (${ov.plan_check_ins} check-in${ov.plan_check_ins === 1 ? '' : 's'}). Windows: ${esc(p.prior?.start || '—')} – ${esc(p.prior?.end || '—')} and ${esc(p.recent?.start || '—')} – ${esc(p.recent?.end || '—')}. A difference is shown only when each window has at least ${GrindZoneProviderInsights.MIN_OBSERVATIONS} entries.</div>
+    </section>
+    <section class="brief-section span-all"><h3>2. Open items</h3>${triageHTML}</section>
+    <section class="brief-section span-all"><h3>3. Feel by app-displayed phase · last ${ov.phase_window_days} days</h3>${phaseSectionHTML(ov.phases, ov.phase_window_days)}</section>
+    <section class="brief-section span-all"><h3>4. Reported tags · last 14 days vs prior 14</h3>${tagSectionHTML(ov.tags)}</section>
+    <section class="brief-section"><h3>5. Dose history in logs</h3>${doseSectionHTML(ov.doses)}</section>
+    <section class="brief-section"><h3>6. When entries are logged</h3>${patternSectionHTML(ov.pattern)}</section>
+    <section class="brief-section span-all"><h3>7. Recent patient notes</h3>${notesSectionHTML(ov.notes)}</section>
+    <section class="brief-section span-all"><h3>8. Pre-visit summary draft</h3><div class="brief-note">Editable here only; it is not stored. Review before pasting into the chart.</div><textarea class="chart-note" id="briefChartNote">${esc(GrindZoneProviderInsights.previsitSummaryText(patient, ov))}</textarea><div class="plan-actions"><button class="clinical-btn" onclick="copyChartNote()">Copy summary</button></div></section>
+    <section class="brief-section span-all"><h3>Data limitations</h3><div class="brief-note">Based on ${ov.n} synced entr${ov.n === 1 ? 'y' : 'ies'}.${logsTruncated ? ` Only the most recent ${LOG_FETCH_LIMIT.toLocaleString()} entries across all linked patients were loaded, so older history may be missing.` : ''} Everyday entries carry a clock time and patient-entered dose time; monitoring-plan check-ins with full timestamps are analysed separately in each plan's Visit Brief. Calculation ${esc(ov.calculation_version)}.</div></section>`;
+}
+function printVisitBrief() {
+  const note=document.getElementById('briefChartNote'), previous=note?.style.height||'';
+  if(note) note.style.height=`${note.scrollHeight}px`;
+  window.print();
+  if(note) setTimeout(()=>{ note.style.height=previous; },0);
+}
+
+function chartDetails(title, rows) {
+  return `<details class="chart-a11y"><summary>Accessible data for ${esc(title)}</summary>${rows.length?rows.map(row=>`<div>${esc(row)}</div>`).join(''):'<div>No valid observations available.</div>'}</details>`;
+}
+
+function feelHourChart(metric) {
+  const shown=metric.buckets.filter(bucket=>bucket.n>0);
+  if(!shown.length) return `<div class="brief-note">Data were unavailable for hour-since-dose display. Full dose and observation timestamps are required. n=0.</div>`;
+  const W=720,H=220,L=42,R=20,T=18,B=38,maxHour=Math.max(1,...metric.buckets.map(b=>b.hour_end));
+  const x=hour=>L+(hour/maxHour)*(W-L-R), y=value=>T+((10-value)/9)*(H-T-B);
+  let paths='', current=[];
+  metric.buckets.forEach(bucket=>{
+    if(!bucket.n){ if(current.length){paths+=`<polyline points="${current.join(' ')}" fill="none" stroke="var(--clinical)" stroke-width="2"/>`;current=[];} return; }
+    current.push(`${x(bucket.hour_start+.5).toFixed(1)},${y(bucket.mean).toFixed(1)}`);
+  });
+  if(current.length) paths+=`<polyline points="${current.join(' ')}" fill="none" stroke="var(--clinical)" stroke-width="2"/>`;
+  const dots=shown.map(bucket=>`<circle cx="${x(bucket.hour_start+.5)}" cy="${y(bucket.mean)}" r="5" fill="${bucket.limited?'var(--surface)':'var(--clinical)'}" stroke="var(--clinical)" stroke-width="2"/><text x="${x(bucket.hour_start+.5)}" y="${y(bucket.mean)-9}" text-anchor="middle" font-size="9" fill="var(--ink-2)">n=${bucket.n}${bucket.limited?'*':''}</text>`).join('');
+  const axes=[1,4,7,10].map(v=>`<line x1="${L}" y1="${y(v)}" x2="${W-R}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${y(v)+3}" text-anchor="end" font-size="9" fill="var(--ink-3)">${v}</text>`).join('');
+  const labels=metric.buckets.filter((_,i)=>i%Math.max(1,Math.ceil(metric.buckets.length/8))===0).map(b=>`<text x="${x(b.hour_start+.5)}" y="${H-13}" text-anchor="middle" font-size="9" fill="var(--ink-3)">${b.hour_start}h</text>`).join('');
+  const rows=shown.map(b=>`${b.hour_start}–${b.hour_end} hours: mean ${b.mean.toFixed(1)}, median ${b.median.toFixed(1)}, range ${b.min}–${b.max}, n=${b.n}${b.limited?' (limited data)':''}.`);
+  return `<div class="chart-shell"><svg role="img" aria-label="Actual patient-reported feel observations by hour since recorded dose" width="100%" height="${H}" viewBox="0 0 ${W} ${H}">${axes}${paths}${dots}${labels}<text x="${W/2}" y="${H-1}" text-anchor="middle" font-size="10" fill="var(--ink-2)">Hours since recorded dose</text></svg></div>${chartDetails('feel by hour since dose',rows)}<div class="brief-note">Actual one-hour buckets only; gaps are not interpolated. * n=1 is limited data. Total valid observations n=${metric.n}.</div>`;
+}
+
+function planDayChart(metric) {
+  const days=metric.days;
+  if(!days.length) return `<div class="brief-note">No eligible plan days were available. n=0.</div>`;
+  const W=720,H=230,L=42,R=18,T=18,B=52,step=(W-L-R)/Math.max(1,days.length);
+  const y=value=>T+((10-value)/9)*(H-T-B);
+  const axes=[1,4,7,10].map(v=>`<line x1="${L}" y1="${y(v)}" x2="${W-R}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-8}" y="${y(v)+3}" text-anchor="end" font-size="9" fill="var(--ink-3)">${v}</text>`).join('');
+  const marks=days.map((day,i)=>{
+    const cx=L+i*step+step/2, status=day.medication_status==='taken'?'Taken':day.medication_status==='not_taken'?'Not taken':day.check_in_recorded?'Uncertain':'No check-in';
+    const marker=day.n?`<circle cx="${cx}" cy="${y(day.mean)}" r="5" fill="var(--clinical)"/><text x="${cx}" y="${y(day.mean)-9}" text-anchor="middle" font-size="9" fill="var(--ink-2)">n=${day.n}</text>`:`<line x1="${cx-4}" y1="${H-B-4}" x2="${cx+4}" y2="${H-B+4}" stroke="var(--ink-3)"/><line x1="${cx+4}" y1="${H-B-4}" x2="${cx-4}" y2="${H-B+4}" stroke="var(--ink-3)"/>`;
+    return `${marker}<text x="${cx}" y="${H-34}" text-anchor="middle" font-size="8" fill="var(--ink-3)">D${i+1}</text><text x="${cx}" y="${H-20}" text-anchor="middle" font-size="7" fill="var(--ink-2)">${status}</text>`;
+  }).join('');
+  const rows=days.map((day,i)=>`Plan day ${i+1}: ${day.n?`mean ${day.mean.toFixed(1)}, median ${day.median.toFixed(1)}, n=${day.n}`:'no feel observation'}; medication status ${day.medication_status||'unavailable'}; data quality ${day.data_quality_state}.`);
+  return `<div class="chart-shell"><svg role="img" aria-label="Mean of patient-reported observations across eligible plan days with medication status labels" width="100%" height="${H}" viewBox="0 0 ${W} ${H}">${axes}${marks}</svg></div>${chartDetails('observations across eligible plan days',rows)}<div class="brief-note">Mean of observations recorded that day. Medication status is written below each day; an × means no feel observation. No direction classification is applied. Days with observations n=${metric.n}.</div>`;
+}
+
+function sideEffectChart(metric) {
+  if(!metric.denominator_days.value) return `<div class="brief-note">Insufficient answered side-effect data. The side-effect question was not answered on any eligible medication-confirmed day. n=0.</div>`;
+  if(!metric.effects.length) return `<div class="brief-note">None reported on ${metric.denominator_days.value} eligible medication-confirmed day${metric.denominator_days.value===1?'':'s'} when the question was answered. n=${metric.denominator_days.value}.</div>`;
+  const W=720,rowH=36,L=190,R=40,H=metric.effects.length*rowH+24,max=Math.max(1,...metric.effects.map(e=>e.denominator_days));
+  const bars=metric.effects.map((effect,i)=>{const y=12+i*rowH,width=(W-L-R)*(effect.distinct_day_count/max);return `<text x="${L-8}" y="${y+15}" text-anchor="end" font-size="10" fill="var(--ink-2)">${esc(effect.effect)}</text><rect x="${L}" y="${y}" width="${width}" height="19" rx="4" fill="var(--clinical)"/><text x="${L+width+7}" y="${y+14}" font-size="10" fill="var(--ink-2)">${effect.distinct_day_count}/${effect.denominator_days} days</text>`;}).join('');
+  const rows=metric.effects.map(effect=>`${effect.effect}: ${effect.distinct_day_count} distinct reported days of ${effect.denominator_days} eligible medication-confirmed answered days (${Math.round(effect.rate*100)}%).`);
+  return `<div class="chart-shell"><svg role="img" aria-label="Distinct patient-reported side-effect days" width="100%" height="${H}" viewBox="0 0 ${W} ${H}">${bars}</svg></div>${chartDetails('side-effect days',rows)}<div class="brief-note">Denominator: distinct eligible days when medication was confirmed taken and the side-effect question was answered. n=${metric.denominator_days.value}; unanswered on ${metric.unanswered_side_effect_question_days.value} medication-confirmed day(s).</div>`;
+}
+
+function descriptorHTML(label, descriptor) {
+  if(!descriptor.n) return `<div class="brief-stat"><b>—</b><span>${esc(label)} · n=0</span></div>`;
+  return `<div class="brief-stat"><b>${hoursLabel(descriptor.median)}</b><span>${esc(label)} median · n=${descriptor.n}</span></div><div class="brief-stat"><b>${hoursLabel(descriptor.mean)}</b><span>${esc(label)} mean</span></div><div class="brief-stat"><b>${hoursLabel(descriptor.min)}–${hoursLabel(descriptor.max)}</b><span>Min–max</span></div><div class="brief-stat"><b>${hoursLabel(descriptor.iqr)}</b><span>IQR${descriptor.sd==null?'':' · SD '+descriptor.sd.toFixed(1)}</span></div>`;
+}
+
+function visitBriefHTML(patient, plan, idx) {
+  const m=briefMetrics(patient,plan), status=m.check_in_status, q=m.data_quality;
+  const eligible=status.eligible_plan_days.value, recorded=status.check_in_recorded.value, completion=eligible?Math.round(recorded/eligible*100):0;
+  const logs=patient.logs.filter(row=>row.monitoring_plan_id===plan.id);
+  const rawRows=logs.slice().sort((a,b)=>String(a.occurred_at||a.ts).localeCompare(String(b.occurred_at||b.ts))).map(row=>`<tr><td>${esc(row.patient_logical_day||'Legacy / unavailable')}</td><td>${row.took_medication===true?'Taken':row.took_medication===false?'Not taken':'Uncertain'}</td><td>${esc(row.dose_occurred_at?new Date(row.dose_occurred_at).toLocaleString():to12(row.dose_time)||'—')}</td><td>${esc(row.onset_occurred_at?new Date(row.onset_occurred_at).toLocaleString():to12(row.noticed_working_at)||'—')}</td><td>${esc(row.wearoff_occurred_at?new Date(row.wearoff_occurred_at).toLocaleString():to12(row.benefit_faded_at)||'—')}</td><td>${Number.isFinite(Number(row.feel))?esc(row.feel)+'/10':'—'}</td><td>${row.clinical_side_effects_answered===true?esc((row.side_effects||[]).join(', ')||'None reported'):'Unanswered / legacy'}</td><td>${esc(row.note||'')}</td></tr>`).join('');
+  const contexts=m.normalized.planDays.filter(day=>day.eligibility==='eligible'&&(day.sleepContext||day.mealContext));
+  const outcome=plan.outcome||'';
+  return `
+    <section class="brief-section span-all"><h3>1. Monitoring overview</h3><div class="brief-context-grid">
+      <div class="brief-stat"><b>${esc(plan.drug_name||plan.drug_key)}${plan.dose_mg!=null?' '+esc(plan.dose_mg)+' mg':''}</b><span>Monitoring plan</span></div>
+      <div class="brief-stat"><b>${esc(plan.treatment_change_date)}–${esc(m.normalized.eligibleEnd||plan.end_date||'—')}</b><span>Inclusive eligible period</span></div>
+      <div class="brief-stat"><b>${esc(plan.status||'—')}</b><span>Plan status</span></div>
+      <div class="brief-stat"><b>${recorded}/${eligible} · ${completion}%</b><span>Check-in completion</span></div>
+    </div><div class="brief-note">${eligible} elapsed eligible plan day(s). Future, post-closure, and paused dates are excluded. Patient logical dates are used; provider browser timezone does not regroup observations.${m.normalized.timingSemanticsReason?' Patient timezone was unavailable, so the current-day boundary is incomplete until patient context is captured.':''} Calculation ${esc(m.calculation_version)}.</div></section>
+
+    <section class="brief-section"><h3>2. Check-in and medication status</h3>
+      <div class="metric-line"><span>Eligible plan days</span><strong>${eligible}</strong></div>
+      <div class="metric-line"><span>↳ Check-in recorded</span><strong>${recorded}</strong></div>
+      <div class="metric-line"><span>　↳ Medication taken</span><strong>${status.check_in_recorded.medication_taken.value}</strong></div>
+      <div class="metric-line"><span>　↳ Medication not taken</span><strong>${status.check_in_recorded.medication_not_taken.value}</strong></div>
+      <div class="metric-line"><span>　↳ Medication status uncertain</span><strong>${status.check_in_recorded.medication_status_uncertain.value}</strong></div>
+      <div class="metric-line"><span>↳ No check-in recorded</span><strong>${status.no_check_in_recorded.value}</strong></div>
+      <div class="brief-note">No-check-in days do not indicate whether medication was taken. n=${eligible} eligible days.</div>
+    </section>
+
+    <section class="brief-section"><h3>3. Patient-reported onset and wear-off</h3>
+      <div class="brief-context-grid">${descriptorHTML('Onset after dose',m.timing.onset)}${descriptorHTML('Wear-off after dose',m.timing.coverage)}</div>
+      <div class="brief-note">Descriptive elapsed times from valid full datetimes only. No expected-reference comparison or medication interpretation is applied.</div>
+    </section>
+
+    <section class="brief-section span-all"><h3>4. Feel observations by hour since dose</h3>${feelHourChart(m.feel_by_hour)}</section>
+    <section class="brief-section span-all"><h3>5. Observations across eligible plan days</h3>${planDayChart(m.day_level_observations)}</section>
+    <section class="brief-section span-all"><h3>6. Side-effect days</h3>${sideEffectChart(m.side_effect_days)}</section>
+
+    <section class="brief-section"><h3>7. Context reported by the patient</h3>
+      ${contexts.length?contexts.map((day,i)=>`<div class="metric-line"><span>Eligible day ${m.normalized.planDays.filter(d=>d.eligibility==='eligible').indexOf(day)+1}</span><strong>${esc([day.sleepContext&&'Sleep: '+day.sleepContext,day.mealContext&&'Meal: '+day.mealContext].filter(Boolean).join(' · '))}</strong></div>`).join(''):'<div class="brief-note">No sleep or meal context was recorded on eligible days. n=0.</div>'}
+      <div class="brief-note">Context is displayed descriptively only; no food-effect or causal analysis is performed. n=${contexts.length} day(s).</div>
+    </section>
+
+    <section class="brief-section"><h3>8. Data quality and limitations</h3><div class="quality-grid">
+      <div class="quality-item"><b>${countPercent(q.check_in_completion)}</b>Check-in completion</div>
+      <div class="quality-item"><b>${countPercent(q.medication_status_availability)}</b>Medication status available</div>
+      <div class="quality-item"><b>${countPercent(q.dose_time_availability)}</b>Full dose time available</div>
+      <div class="quality-item"><b>${countPercent(q.feel_observation_availability)}</b>Feel observations available</div>
+      <div class="quality-item"><b>${countPercent(q.side_effect_answeredness)}</b>Side-effect question answered</div>
+      <div class="quality-item"><b>${q.conflicting_days.value}/${q.conflicting_days.n}</b>Conflicting days</div>
+      <div class="quality-item"><b>${q.invalid_observations.value}</b>Invalid observations</div>
+      <div class="quality-item"><b>${q.legacy_rows.value}</b>Legacy rows excluded</div>
+    </div><div class="brief-note">Complete ${q.day_states.complete}; partial ${q.day_states.partial}; conflicting ${q.day_states.conflicting}; no check-in ${q.day_states.no_check_in}. Retrospective entries ${q.retrospective_entries.value}/${q.retrospective_entries.n}. Missing timestamps remain unavailable rather than inferred.</div></section>
+
+    <section class="brief-section span-all"><h3>9. Clinical-summary draft</h3><div class="brief-note">Editable in this Visit Brief only; it is not stored. Review before copying.</div><textarea class="chart-note" id="briefChartNote">${esc(buildChartNote(patient,plan,m))}</textarea><div class="plan-actions"><button class="clinical-btn" onclick="copyChartNote()">Copy current draft</button>${patient.demo?`<button class="clinical-btn-quiet" id="generateAiBtn" onclick="generateDemoNarrative()" ${currentUser?'':'disabled'}>Generate demo AI draft</button>`:`<button class="clinical-btn-quiet" disabled>AI draft · Demo only</button>`}</div><div class="ai-state" id="aiState">${patient.demo?(currentUser?'Synthetic demo only. Structured metrics are sent after server authorization.':'Sign in as a provider to use synthetic-demo generation.'):'Real-patient AI is disabled pending separately reviewed external-service, retention, security, and compliance configuration.'}</div><div class="ai-meta" id="aiMeta"></div></section>
+
+    <section class="brief-section span-all"><h3>10. Raw evidence</h3><details class="raw-evidence"><summary>Show ${logs.length} patient observation row(s)</summary><div class="raw-table-wrap"><table class="raw-table"><thead><tr><th>Patient logical day</th><th>Medication</th><th>Dose timestamp</th><th>Onset timestamp</th><th>Wear-off timestamp</th><th>Feel</th><th>Side effects</th><th>Note</th></tr></thead><tbody>${rawRows||'<tr><td colspan="8">No observation rows recorded for this monitoring plan.</td></tr>'}</tbody></table></div></details><div class="brief-note">Raw notes remain in this provider-authorized view and are never included in the demo AI request.</div></section>
+
+    ${(plan.status==='completed'||plan.status==='closed')?`<section class="brief-section span-all"><h3>Existing plan outcome record</h3><div class="outcome-grid"><select id="briefOutcome"><option value="">Choose outcome…</option>${['Continue current plan','Dose increase','Add booster','Switch medication','Other'].map(o=>`<option ${outcome===o?'selected':''}>${o}</option>`).join('')}</select><textarea id="briefOutcomeNote" rows="2" placeholder="Optional clinical context">${esc(plan.outcome_note||'')}</textarea></div><div class="plan-actions"><button class="clinical-btn" onclick="savePlanOutcome()">Save outcome</button>${patient.demo?`<button class="clinical-btn-quiet" id="demoCompletionBtn" onclick="recordSyntheticDemoCompletion()" ${currentUser?'':'disabled'}>Record synthetic demo closure</button>`:''}</div><div class="ai-state" id="demoCompletionState">${patient.demo?'Synthetic metrics prototype only; no real-plan research write is enabled.':''}</div></section>`:''}`;
+}
+
+function buildChartNote(patient,plan,m) {
+  const status=m.check_in_status, eligible=status.eligible_plan_days.value, recorded=status.check_in_recorded.value;
+  const effects=m.side_effect_days.effects.map(effect=>`${effect.effect} (${effect.distinct_day_count}/${effect.denominator_days} answered days)`).join(', ');
+  const onset=m.timing.onset.n?`Onset observations: median ${hoursLabel(m.timing.onset.median)}, mean ${hoursLabel(m.timing.onset.mean)}, range ${hoursLabel(m.timing.onset.min)}–${hoursLabel(m.timing.onset.max)} (n=${m.timing.onset.n}).`:'Onset timing data were unavailable.';
+  const coverage=m.timing.coverage.n?`Wear-off observations after dose: median ${hoursLabel(m.timing.coverage.median)}, mean ${hoursLabel(m.timing.coverage.mean)}, range ${hoursLabel(m.timing.coverage.min)}–${hoursLabel(m.timing.coverage.max)} (n=${m.timing.coverage.n}).`:'Wear-off timing data were unavailable.';
+  const sideText=m.side_effect_days.denominator_days.value?(effects?`Patient-reported side-effect days: ${effects}.`:`No side effects were reported on ${m.side_effect_days.denominator_days.value} eligible medication-confirmed answered day(s).`):'The side-effect question had insufficient answered data.';
+  return `Grind-Zone patient-reported monitoring summary — ${plan.drug_name||plan.drug_key}${plan.dose_mg!=null?' '+plan.dose_mg+' mg':''}\nDuring ${eligible} eligible plan days, check-ins were recorded on ${recorded} day(s). Medication was reported taken on ${status.check_in_recorded.medication_taken.value} day(s), not taken on ${status.check_in_recorded.medication_not_taken.value} day(s), and status was uncertain on ${status.check_in_recorded.medication_status_uncertain.value} check-in day(s). No check-in was recorded on ${status.no_check_in_recorded.value} day(s).\n${onset} ${coverage}\n${sideText}\nData quality: ${m.data_quality.day_states.complete} complete, ${m.data_quality.day_states.partial} partial, ${m.data_quality.day_states.conflicting} conflicting eligible day(s); ${m.data_quality.legacy_rows.value} legacy row(s) excluded from normalized metrics.\nThis summary is derived from patient-reported observations during a defined monitoring period and is intended to support, not replace, clinical judgment.`;
+}
+
+function aiStructuredMetrics(m, plan) {
+  return {
+    calculation_version:m.calculation_version,
+    plan:{length_days:m.check_in_status.eligible_plan_days.value,status:String(plan.status||'unknown')},
+    check_in_status:m.check_in_status,
+    timing:m.timing,
+    feel_by_hour:{buckets:m.feel_by_hour.buckets.map(bucket=>({hour_start:bucket.hour_start,hour_end:bucket.hour_end,mean:bucket.mean,median:bucket.median,min:bucket.min,max:bucket.max,n:bucket.n,limited:bucket.limited})),n:m.feel_by_hour.n},
+    plan_days:{days:m.day_level_observations.days.map((day,index)=>({plan_day:index+1,mean:day.mean,median:day.median,min:day.min,max:day.max,n:day.n,medication_status:day.medication_status,data_quality_state:day.data_quality_state})),n:m.day_level_observations.n},
+    side_effect_days:m.side_effect_days,
+    data_quality:m.data_quality
+  };
+}
+
+async function generateDemoNarrative() {
+  const patient=patientCache[openBriefPatientIndex], plan=patient?.plans.find(item=>item.id===openBriefPlanId);
+  const state=document.getElementById('aiState'), button=document.getElementById('generateAiBtn');
+  if(!patient?.demo || patient.demoKey!==APPROVED_DEMO_KEY || !currentUser || !plan){ if(state)state.textContent='Synthetic-demo provider authorization is required.'; return; }
+  button.disabled=true; button.textContent='Generating…'; state.textContent='Generating a short synthetic-demo draft…';
+  const metrics=briefMetrics(patient,plan);
+  const {data,error}=await supa.functions.invoke('generate-demo-narrative',{body:{demo_key:patient.demoKey,metrics:aiStructuredMetrics(metrics,plan)}});
+  button.disabled=false; button.textContent='Generate demo AI draft';
+  if(error||!data?.narrative){ state.textContent=data?.error==='timeout'?'Generation timed out. Try again.':data?.error==='validation_failed'?'The generated draft did not pass language validation.':data?.error||'Demo generation is unavailable. Check the Function configuration.'; return; }
+  document.getElementById('briefChartNote').value=data.narrative;
+  state.textContent='AI-generated draft — review and edit before use.';
+  document.getElementById('aiMeta').textContent=`Model ${data.model_id} · generated ${new Date(data.generated_at).toLocaleString()}`;
+}
+
+async function recordSyntheticDemoCompletion() {
+  const patient=patientCache[openBriefPatientIndex], button=document.getElementById('demoCompletionBtn'), state=document.getElementById('demoCompletionState');
+  if(!patient?.demo || patient.demoKey!==APPROVED_DEMO_KEY || !currentUser || RESEARCH_METRICS_ENABLED_FOR_REAL_PLANS){ if(state)state.textContent='Synthetic-demo provider authorization is required.'; return; }
+  button.disabled=true; button.textContent='Recording…';
+  const {data,error}=await supa.functions.invoke('complete-demo-research',{body:{demo_key:patient.demoKey}});
+  button.disabled=false; button.textContent='Record synthetic demo closure';
+  state.textContent=error?'Synthetic completion is unavailable. Check the Function configuration.':data?.duplicate?'This synthetic closure was already recorded; no duplicate row was created.':'Synthetic closure metrics recorded.';
+}
+
+async function savePlanOutcome() {
+  const patient=patientCache[openBriefPatientIndex], plan=patient?.plans.find(p=>p.id===openBriefPlanId); if(!plan)return;
+  const outcome=document.getElementById('briefOutcome').value, note=document.getElementById('briefOutcomeNote').value.trim();
+  if(!outcome){showToast('Choose an outcome first');return;}
+  if(!patient.demo){ const {error}=await supa.from('monitoring_plans').update({outcome,outcome_note:note,updated_at:new Date().toISOString()}).eq('id',plan.id).eq('provider_id',providerProfile.id); if(error){showToast('Outcome could not be saved');return;} }
+  plan.outcome=outcome; plan.outcome_note=note; showToast('Outcome saved');
+}
+
+function copyChartNote() {
+  const text=document.getElementById('briefChartNote')?.value||'';
+  navigator.clipboard.writeText(text).then(()=>showToast('Chart note copied'),()=>showToast('Copy failed — select the note manually'));
 }
 
 // ─── PATIENT PRINT REPORT ────────────────────────────────────────────────────
@@ -582,9 +1277,10 @@ function patientReportHTML(p) {
   </div>
 
   <div class="pr-section">
-    <h2>Medications appearing in logs (30 days)</h2>
-    <p>${drugsSeen.length ? drugsSeen.map(esc).join(' · ') : 'No entries in the last 30 days.'}</p>
-    <p style="font-size:10px;color:#555;">Note: the patient's full active medication list and selected doses are stored on their device and are not synced to the provider portal. The patient can print a fuller report (including dose selections and treatment timeline) from their own app under Settings › Export for prescriber.</p>
+    <h2>Medications</h2>
+    <p><strong>Synced from patient app:</strong> ${(p.medications || []).length ? p.medications.map(m => `${esc(m.drug_name || m.drug_key)}${m.dose_mg != null ? ' ' + esc(m.dose_mg) + ' mg' : ' (dose not set)'}${m.updated_at ? ' — updated ' + esc(new Date(m.updated_at).toLocaleDateString()) : ''}`).join(' · ') : 'No medication list has been synced yet.'}</p>
+    <p><strong>Appearing in logs (30 days):</strong> ${drugsSeen.length ? drugsSeen.map(esc).join(' · ') : 'No entries in the last 30 days.'}</p>
+    <p style="font-size:10px;color:#555;">Medication selections and doses are patient-entered in the app and are not a reconciled medication list.</p>
   </div>
 
   <div class="pr-section">
